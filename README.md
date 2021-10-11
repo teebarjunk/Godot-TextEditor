@@ -45,7 +45,7 @@ To make it easier to find stuff there is a *Symbol* viewer.
 Symbols can have tags. Tags are added with comments.
 
 - `Markdown` uses `<!-- #tag1 #tag2 -->`
-- `JSON` uses `/* #tag1 #tag2 */` or `"#": "#tag1 #tag2"`
+- `JSON` uses `"#": "#tag1 #tag2"`
 - `YAML` uses `# #tag1 #tag2` or `"#": "#tag1 #tag2"`
 - `ini` `cfg` uses `; #tag1 #tag2`
 
