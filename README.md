@@ -1,6 +1,8 @@
 # Text Editor
 Version 1.0
 
+![](readme_preview.png)
+
 ***Warning: Use at your own risk. Backup your files before testing.***
 
 # Features
