@@ -352,7 +352,7 @@ func _selected_file_changed(file_path:String):
 		emit_signal("file_selected", last_selected_file)
 
 func is_tag_enabled(tag:String) -> bool:
-	return tags_enabled[tag]
+	return tags_enabled.get(tag, false)
 
 func enable_tag(tag:String, enabled:bool=true):
 	tags_enabled[tag] = enabled
@@ -611,6 +611,7 @@ func set_directory(path:String=current_directory):
 
 func _file_symbols_updated(file_path:String):
 	var tg = get_tab(file_path).tags
+	tags_enabled.clear()
 	for tag in tg:
 		if not tag in tags_enabled:
 			tags_enabled[tag] = false

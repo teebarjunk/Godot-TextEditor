@@ -239,15 +239,12 @@ func _draw_dir(dir:Dictionary, deep:int):
 			
 			if is_tagging:
 				if editor.is_tagged(file_path):
-#					file = b(file)
-					pass
+					file = b(file)
 					
 				else:
 					color = color.darkened(dimmest)
 			else:
 				pass
-#				if is_opened:
-#					file = b(file)
 					
 			file = clr(file, color)
 			ext = clr("." + ext, Color.white.darkened(.65))

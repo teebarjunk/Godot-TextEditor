@@ -34,6 +34,7 @@ func _ready():
 	
 	if get_parent() is TabContainer:
 		get_parent().connect("tab_changed", self, "_tab_changed")
+		get_parent().connect("tab_selected", self, "_tab_changed")
 	
 	add_font_override("font", editor.FONT)
 	get_menu().add_font_override("font", editor.FONT)
@@ -58,6 +59,8 @@ func _scroll_v(v:VScrollBar):
 func _tab_changed(index:int):
 	var myindex = get_index()
 	if index == myindex and visible:
+		grab_focus()
+		grab_click_focus()
 		yield(get_tree(), "idle_frame")
 		set_h_scroll(hscroll)
 		set_v_scroll(vscroll)
@@ -87,16 +90,27 @@ func _input(e):
 	if not visible or not in_focus:
 		return
 	
-	# save files
 	if e is InputEventKey and e.pressed and e.control:
-		if e.scancode == KEY_S:
-			if modified:
-				get_tree().set_input_as_handled()
-				editor.save_files()
-		
-		if e.scancode == KEY_W and not e.shift:
+		# tab to next
+		if e.scancode == KEY_TAB:
 			get_tree().set_input_as_handled()
-			close()
+			if e.shift:
+				get_parent().prev()
+			else:
+				get_parent().next()
+		
+		# save files
+		elif e.scancode == KEY_S:
+			get_tree().set_input_as_handled()
+			editor.save_files()
+		
+		# close file
+		elif e.scancode == KEY_W:
+			get_tree().set_input_as_handled()
+			if e.shift:
+				editor.open_last_file()
+			else:
+				close()
 	
 	# remember last selection
 	if e is InputEventKey and e.pressed:
