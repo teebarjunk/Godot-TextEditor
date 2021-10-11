@@ -21,7 +21,6 @@ Version 1.0
 		- `.ini`: `; `
 		- `.cfg`: `; `
 		- `.yaml`: `# `
-	- Table of Contents (Symbols)
 
 # Controls
 - `ctrl + W` Close file

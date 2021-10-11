@@ -190,13 +190,16 @@ func url(s:String, url:String) -> String: return "[url=%s]%s[/url]" % [url, s]
 
 const FOLDER:String = "🗀" # not visible in godot
 func _draw_dir(dir:Dictionary, deep:int):
+	var is_tagging = editor.is_tagging()
+	var dimmest:float = .65 if is_tagging else 0.0
+	
 	var space = clr("┃ ".repeat(deep), Color.white.darkened(.8))
 	var file:String = dir.file_path
 	var name:String = b(file.get_file())
 	var head:String = "▼" if dir.open else "▶"
 	var dir_index:int = len(dirs)
-	var link:String = url(space+FOLDER+head+" "+name, "d:%s" % dir_index)
-	lines.append(clr(link, Color.white.darkened(.7)))
+	var link:String = url(space+clr(FOLDER+head, Color.white.darkened(.5))+" "+name, "d:%s" % dir_index)
+	lines.append(clr(link, Color.white.darkened(dimmest)))
 	dirs.append(dir)
 	
 	var sel = editor.get_selected_tab()
@@ -216,31 +219,38 @@ func _draw_dir(dir:Dictionary, deep:int):
 			file = file_path.get_file()
 			var p = file.split(".", true, 1)
 			file = p[0]
-			var is_selected = file_path == sel
 			var ext = p[1]
-			match ext:
-				"cfg", "ini": head = "⚙" # invisible emoji
-				"json", "yaml": head = "💾" # invisible emoji
-				_: head = "┣╸" if i != last else "┗╸"
+			
+			var is_selected = file_path == sel
+			var is_opened = editor.is_opened(file_path)
+			var color = Color.white
+			head = "┣╸" if i != last else "┗╸"
 			
 			if "readme" in file.to_lower():
 				head = "🛈"
 			
 			if is_selected:
-				head = clr(head, Color.white.darkened(.5))
+				head = "● "
+			
+			elif is_opened:
+				head = "○ "
+			
+			head = clr(head, Color.white.darkened(.5 if is_opened else .75))
+			
+			if is_tagging:
+				if editor.is_tagged(file_path):
+#					file = b(file)
+					pass
+					
+				else:
+					color = color.darkened(dimmest)
 			else:
-				head = clr(head, Color.white.darkened(.8))
-			
-			var color = Color.white if editor.is_tagged(file_path) else Color.white.darkened(.5)
-			
-			if editor.is_selected(file_path):
-				file = clr(file, color)
-			elif editor.is_opened(file_path):
-				file = clr(file, color.darkened(.5))
-			else:
-				file = i(clr(file, color.darkened(.75)))
-			
-			ext = clr("." + ext, Color.white.darkened(.75))
+				pass
+#				if is_opened:
+#					file = b(file)
+					
+			file = clr(file, color)
+			ext = clr("." + ext, Color.white.darkened(.65))
 			var line = space + head + file + ext
 			lines.append(url(line, "f:%s" % len(files)))
 			files.append(file_path)

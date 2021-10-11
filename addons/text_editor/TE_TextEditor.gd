@@ -66,12 +66,12 @@ var color_var:Color = Color.orange
 var color_varname:Color = Color.white.darkened(.25)
 
 onready var test_button:Node = $c/c/c/test
-onready var tab_parent:TabContainer = $c/c3/c/c/tab_container
+onready var tab_parent:TabContainer = $c/div1/div2/c/tab_container
 onready var tab_prefab:Node = $file_editor
 onready var popup:ConfirmationDialog = $popup
 onready var popup_unsaved:ConfirmationDialog = $popup_unsaved
 onready var file_dialog:FileDialog = $file_dialog
-onready var line_edit:LineEdit = $c/c3/c/c/line_edit
+onready var line_edit:LineEdit = $c/div1/div2/c/line_edit
 onready var menu_file:MenuButton = $c/c/c/file_button
 onready var menu_view:MenuButton = $c/c/c/view_button
 var popup_file:PopupMenu
@@ -203,10 +203,14 @@ func load_state():
 	tags_enabled = state.tags_enabled
 	exts_enabled = state.exts_enabled
 	
+	$c/div1.split_offset = state.div1
+	$c/div1/div2.split_offset = state.div2
+	
 	emit_signal("state_loaded")
 
 func save_state():
 	var state:Dictionary = {
+		"save_version": "1",
 		"current": current_directory,
 		"font_size": FONT.size,
 		"tabs": {},
@@ -215,7 +219,10 @@ func save_state():
 		"tags": tags,
 		"tag_counts": tag_counts,
 		"tags_enabled": tags_enabled,
-		"exts_enabled": exts_enabled
+		"exts_enabled": exts_enabled,
+		
+		"div1": $c/div1.split_offset,
+		"div2": $c/div1/div2.split_offset
 	}
 	for tab in get_all_tabs():
 		state.tabs[tab.file_path] = tab.get_state()
@@ -358,12 +365,13 @@ func is_tagged_or_visible(file_tags:Array) -> bool:
 	return true
 
 func is_tagged(file_path:String) -> bool:
-	if not len(tags):
-		return true
 	var tab = get_tab(file_path)
 	if tab:
 		return is_tagged_or_visible(tab.tags.keys())
 	return false
+
+func is_tagging() -> bool:
+	return len(tags) > 0
 
 func popup_create_file(dir:String="res://"):
 	file_dialog.mode = FileDialog.MODE_SAVE_FILE
@@ -518,6 +526,7 @@ func is_opened(file_path:String) -> bool:
 
 func is_selected(file_path:String) -> bool:
 	return get_selected_file() == file_path
+
 
 func recycle_file(file_path:String):
 	var old_base:String = file_path.substr(len("res://")).get_base_dir()

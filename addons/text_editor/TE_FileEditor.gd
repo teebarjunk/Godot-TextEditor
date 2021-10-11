@@ -51,7 +51,6 @@ func _scroll_h(h:HScrollBar):
 
 func _scroll_v(v:VScrollBar):
 	vscroll = v.value
-	prints(file_path, vscroll)
 
 func _tab_changed(index:int):
 	var myindex = get_index()
@@ -241,15 +240,18 @@ func update_name():
 	update_heading()
 
 func update_heading():
+	if Engine.editor_hint:
+		return
+	
 	# set window "file (directory)"
 	var f = file_path.get_file()
 	if modified:
 		f = "*" + f
 	var d = file_path.get_base_dir().get_file()
 	if d:
-		OS.set_window_title("%s (%s)" % [f, d])
+		OS.set_window_title("%s (%s) - Text Editor" % [f, d])
 	else:
-		OS.set_window_title(f)
+		OS.set_window_title("%s - Text Editor" % f)
 
 func needs_save() -> bool:
 	return modified or not File.new().file_exists(file_path)
