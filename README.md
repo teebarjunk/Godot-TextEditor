@@ -64,3 +64,5 @@ This will then highlight *Files* and *Symbols* that have that tag.
 - [ ] Undo recycle
 
 
+# Credit
+<div>Logo preview by <a href="https://www.flaticon.com/authors/flat-icons" title="Flat Icons">Flat Icons</a> from <a href="https://www.flaticon.com/" title="Flaticon">www.flaticon.com</a></div>
