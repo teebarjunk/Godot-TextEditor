@@ -12,5 +12,6 @@ data_*/
 
 # Text editor related
 test_files/
-.te_trash/
-.te_trash_info.json
+.trash/
+.trash.json
+.text_editor_state.json
