@@ -21,4 +21,5 @@ func _file_saved(_file_path:String):
 
 func _redraw():
 	var tab = editor.get_selected_tab()
-	tab.helper.generate_meta(tab, self)
+	if tab:
+		tab.helper.generate_meta(tab, self)
