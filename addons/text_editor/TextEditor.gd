@@ -8,8 +8,8 @@ const FONT_B:DynamicFont = preload("res://addons/text_editor/fonts/font_b.tres")
 const FONT_I:DynamicFont = preload("res://addons/text_editor/fonts/font_i.tres")
 const FONT_BI:DynamicFont = preload("res://addons/text_editor/fonts/font_bi.tres")
 
-const SHOW_EXT:PoolStringArray = PoolStringArray([
-	".txt", ".md", ".json", ".csv", ".ini", ".cfg", ".yaml"
+const EXTENSIONS:PoolStringArray = PoolStringArray([
+	"txt", "md", "json", "csv", "cfg", "ini", "yaml"
 ])
 const FILE_FILTERS:PoolStringArray = PoolStringArray([
 	"*.txt ; Text",
@@ -34,8 +34,9 @@ onready var tab_prefab:Node = $c/c3/c/c/tab_container/tab_prefab
 onready var popup:ConfirmationDialog = $popup
 onready var popup_unsaved:ConfirmationDialog = $popup_unsaved
 onready var file_dialog:FileDialog = $file_dialog
-onready var menu_file:MenuButton = $c/c/c/file_button
 onready var line_edit:LineEdit = $c/c3/c/c/line_edit
+onready var menu_file:MenuButton = $c/c/c/file_button
+var ext_menu:PopupMenu = PopupMenu.new()
 
 signal updated_file_list()
 signal file_opened(file_path)
@@ -51,16 +52,20 @@ signal save_files()
 var current_directory:String = ""
 var dirs:Array = []
 var file_list:Dictionary = {}
-var extensions:Dictionary = {}
+var ext_counts:Dictionary = {}
 var symbols:Dictionary = {}
 var tags:Array = []
 var tags_enabled:Dictionary = {}
 var tag_counts:Dictionary = {}
+var exts_enabled:Array = []
 
 var opened:Array = []
 var closed:Array = []
 
 func _ready():
+	# not needed when editor plugin
+#	get_tree().set_auto_accept_quit(false)
+	
 	var _e
 	_e = test_button.connect("pressed", self, "_debug_pressed")
 	
@@ -78,6 +83,18 @@ func _ready():
 	p.add_item("New File")
 	_e = p.connect("index_pressed", self, "_menu_file")
 	
+	# extensions
+	ext_menu.set_name("Extensions")
+	ext_menu.add_font_override("font", FONT_R)
+	for i in len(EXTENSIONS):
+		var ext = EXTENSIONS[i]
+		ext_menu.add_check_item(ext, i)
+		ext_menu.set_item_checked(i, true)
+		exts_enabled.append(ext)
+	p.add_child(ext_menu)
+	p.add_submenu_item("Extensions", "Extensions")
+	_e = ext_menu.connect("index_pressed", self, "_menu_extension")
+	
 	# file dialog
 	_e = file_dialog.connect("file_selected", self, "_file_dialog_file")
 	file_dialog.add_font_override("title_font", FONT_R)
@@ -91,6 +108,16 @@ func _ready():
 	tab_parent.add_font_override("font", FONT_R)
 	
 	set_directory()
+
+# not needed when an editor plugin
+#func _notification(what):
+#	match what:
+#		MainLoop.NOTIFICATION_WM_QUIT_REQUEST:
+#			for tab in get_all_tabs():
+#				if tab.modified:
+#					popup.show()
+#					return
+#			get_tree().quit()
 
 func _input(e):
 	if e is InputEventMouseButton and e.control:
@@ -110,6 +137,16 @@ func _apply_fonts(n:Node):
 func _menu_file(a):
 	match menu_file.get_popup().items[a]:
 		"New File": popup_create_file()
+
+func _menu_extension(index:int):
+	var ext = EXTENSIONS[index]
+	var toggled = ext in exts_enabled
+	if toggled:
+		exts_enabled.erase(ext)
+	elif not ext in exts_enabled:
+		exts_enabled.append(ext)
+	ext_menu.set_item_checked(index, not toggled)
+	refresh_files()
 
 func _file_dialog_file(file_path:String):
 	match file_dialog.get_meta("mode"):
@@ -385,7 +422,7 @@ func get_all_tabs() -> Array:
 	return tab_parent.get_children()
 
 func refresh_files():
-	extensions.clear()
+	ext_counts.clear()
 	dirs.clear()
 	file_list.clear()
 	var dir = Directory.new()
@@ -405,26 +442,28 @@ func _scan_dir(id:String, path:String, dir:Directory, list:Dictionary):
 	var fname = dir.get_next()
 	
 	while fname:
-		var file_path = dir.get_current_dir().plus_file(fname)
-		
-		if dir.current_is_dir():
-			# ignore folders with a .gdignore file.
-			if not fname == ".import" and not File.new().file_exists(file_path.plus_file(".gdignore")):
-				var sub_dir = Directory.new()
-				sub_dir.open(file_path)
-				_scan_dir(fname, file_path, sub_dir, files)
-		
-		else:
-			# ignore .import files
-			if not file_path.ends_with(".import"):
-				files[fname] = file_path
-				
-				var ext = get_extension(file_path)
-				if not ext in extensions:
-					extensions[ext] = 1
-				else:
-					extensions[ext] += 1
-		
+		if not fname.begins_with("."):
+			var file_path = dir.get_current_dir().plus_file(fname)
+			
+			if dir.current_is_dir():
+				# ignore folders with a .gdignore file.
+				if not fname == ".import" and not File.new().file_exists(file_path.plus_file(".gdignore")):
+					var sub_dir = Directory.new()
+					sub_dir.open(file_path)
+					_scan_dir(fname, file_path, sub_dir, files)
+			
+			else:
+				# ignore .import files
+				if not file_path.ends_with(".import"):
+					var ext = get_extension(file_path)
+					if ext in exts_enabled:
+						files[fname] = file_path
+						
+						if not ext in ext_counts:
+							ext_counts[ext] = 1
+						else:
+							ext_counts[ext] += 1
+			
 		fname = dir.get_next()
 	dir.list_dir_end()
 

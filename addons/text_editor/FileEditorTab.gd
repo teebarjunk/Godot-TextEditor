@@ -71,7 +71,6 @@ func _input(e):
 			for i in len(lines): set_line(f+i, lines[i])
 			select(f+1, 0, t+1, len(get_line(t+1)))
 			cursor_set_line(cursor_get_line()+1, false)
-			
 
 func _unhandled_key_input(e):
 	if not visible:
@@ -81,7 +80,6 @@ func _unhandled_key_input(e):
 	if e.scancode == KEY_SLASH and e.control and e.pressed:
 		helper.toggle_comment(self)
 		get_tree().set_input_as_handled()
-	
 
 func _file_selected(p:String):
 	if p and p == file_path:
