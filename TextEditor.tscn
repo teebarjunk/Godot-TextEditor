@@ -1,0 +1,255 @@
+[gd_scene load_steps=10 format=2]
+
+[ext_resource path="res://addons/text_editor/file_buttons.gd" type="Script" id=1]
+[ext_resource path="res://addons/text_editor/TextEditor.gd" type="Script" id=2]
+[ext_resource path="res://addons/text_editor/list_files.gd" type="Script" id=3]
+[ext_resource path="res://addons/text_editor/text_edit.gd" type="Script" id=4]
+[ext_resource path="res://addons/text_editor/list_symbols.gd" type="Script" id=5]
+[ext_resource path="res://addons/text_editor/tab_scroll.gd" type="Script" id=6]
+[ext_resource path="res://addons/text_editor/list_tags.gd" type="Script" id=7]
+[ext_resource path="res://addons/text_editor/line_edit.gd" type="Script" id=8]
+[ext_resource path="res://addons/text_editor/meta_panel.gd" type="Script" id=9]
+
+[node name="text_editor" type="Control"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+script = ExtResource( 2 )
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="c" type="VBoxContainer" parent="."]
+anchor_right = 1.0
+anchor_bottom = 1.0
+custom_constants/separation = 0
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="c" type="PanelContainer" parent="c"]
+margin_right = 1024.0
+margin_bottom = 34.0
+
+[node name="c" type="HBoxContainer" parent="c/c"]
+margin_left = 7.0
+margin_top = 7.0
+margin_right = 1017.0
+margin_bottom = 27.0
+script = ExtResource( 1 )
+
+[node name="test" type="Button" parent="c/c/c"]
+margin_right = 56.0
+margin_bottom = 20.0
+text = "update"
+
+[node name="file_button" type="MenuButton" parent="c/c/c"]
+margin_left = 60.0
+margin_right = 92.0
+margin_bottom = 20.0
+text = "file"
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="c3" type="HSplitContainer" parent="c"]
+margin_top = 34.0
+margin_right = 1024.0
+margin_bottom = 600.0
+size_flags_vertical = 3
+split_offset = -300
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="c2" type="PanelContainer" parent="c/c3"]
+margin_right = 206.0
+margin_bottom = 566.0
+rect_min_size = Vector2( 200, 0 )
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="c" type="Panel" parent="c/c3/c2"]
+margin_left = 7.0
+margin_top = 7.0
+margin_right = 199.0
+margin_bottom = 559.0
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="list_files" type="RichTextLabel" parent="c/c3/c2/c"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+size_flags_horizontal = 3
+size_flags_vertical = 3
+bbcode_enabled = true
+meta_underlined = false
+script = ExtResource( 3 )
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="popup" type="PopupMenu" parent="c/c3/c2/c/list_files"]
+margin_right = 69.0
+margin_bottom = 68.0
+
+[node name="drag_label" type="RichTextLabel" parent="c/c3/c2/c/list_files"]
+visible = false
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+bbcode_enabled = true
+fit_content_height = true
+
+[node name="c" type="HSplitContainer" parent="c/c3"]
+margin_left = 218.0
+margin_right = 1024.0
+margin_bottom = 566.0
+size_flags_horizontal = 3
+size_flags_vertical = 3
+split_offset = -80
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="c" type="VBoxContainer" parent="c/c3/c"]
+margin_right = 614.0
+margin_bottom = 566.0
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="line_edit" type="LineEdit" parent="c/c3/c/c"]
+visible = false
+margin_right = 614.0
+margin_bottom = 24.0
+script = ExtResource( 8 )
+
+[node name="tab_container" type="TabContainer" parent="c/c3/c/c"]
+margin_right = 614.0
+margin_bottom = 547.0
+size_flags_horizontal = 3
+size_flags_vertical = 3
+tab_align = 0
+drag_to_rearrange_enabled = true
+script = ExtResource( 6 )
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="tab_prefab" type="TextEdit" parent="c/c3/c/c/tab_container"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+margin_left = 4.0
+margin_top = 32.0
+margin_right = -4.0
+margin_bottom = -4.0
+size_flags_horizontal = 3
+size_flags_vertical = 3
+highlight_current_line = true
+syntax_highlighting = true
+show_line_numbers = true
+draw_tabs = true
+breakpoint_gutter = true
+fold_gutter = true
+highlight_all_occurrences = true
+minimap_draw = true
+script = ExtResource( 4 )
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="meta" type="RichTextLabel" parent="c/c3/c/c"]
+margin_top = 551.0
+margin_right = 614.0
+margin_bottom = 566.0
+bbcode_enabled = true
+fit_content_height = true
+script = ExtResource( 9 )
+
+[node name="c2" type="PanelContainer" parent="c/c3/c"]
+margin_left = 626.0
+margin_right = 806.0
+margin_bottom = 566.0
+rect_min_size = Vector2( 100, 0 )
+size_flags_vertical = 3
+
+[node name="c" type="VSplitContainer" parent="c/c3/c/c2"]
+margin_left = 7.0
+margin_top = 7.0
+margin_right = 173.0
+margin_bottom = 559.0
+custom_constants/autohide = 0
+
+[node name="c" type="Panel" parent="c/c3/c/c2/c"]
+margin_right = 166.0
+margin_bottom = 270.0
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="list_symbols" type="RichTextLabel" parent="c/c3/c/c2/c/c"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+size_flags_vertical = 3
+bbcode_enabled = true
+bbcode_text = "tags"
+meta_underlined = false
+text = "tags"
+script = ExtResource( 5 )
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="c2" type="Panel" parent="c/c3/c/c2/c"]
+margin_top = 282.0
+margin_right = 166.0
+margin_bottom = 552.0
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="list_tags" type="RichTextLabel" parent="c/c3/c/c2/c/c2"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+size_flags_horizontal = 3
+size_flags_vertical = 3
+bbcode_enabled = true
+bbcode_text = "tags"
+meta_underlined = false
+text = "tags"
+script = ExtResource( 7 )
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="popup" type="ConfirmationDialog" parent="."]
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+margin_left = -100.0
+margin_top = -35.0
+margin_right = 100.0
+margin_bottom = 35.0
+
+[node name="popup_unsaved" type="ConfirmationDialog" parent="."]
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+margin_left = -100.0
+margin_top = -35.0
+margin_right = 100.0
+margin_bottom = 35.0
+window_title = "Warning"
+dialog_text = "Unsaved data will be lost."
+
+[node name="file_dialog" type="FileDialog" parent="."]
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+margin_left = -297.5
+margin_top = -157.0
+margin_right = 297.5
+margin_bottom = 157.0
+__meta__ = {
+"_edit_use_anchors_": false
+}
