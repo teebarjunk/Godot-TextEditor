@@ -191,7 +191,7 @@ func url(s:String, url:String) -> String: return "[url=%s]%s[/url]" % [url, s]
 const FOLDER:String = "🗀" # not visible in godot
 func _draw_dir(dir:Dictionary, deep:int):
 	var is_tagging = editor.is_tagging()
-	var dimmest:float = .65 if is_tagging else 0.0
+	var dimmest:float = .5 if is_tagging else 0.0
 	
 	var space = clr("┃ ".repeat(deep), Color.white.darkened(.8))
 	var file:String = dir.file_path

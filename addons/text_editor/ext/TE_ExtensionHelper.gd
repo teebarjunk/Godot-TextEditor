@@ -21,13 +21,20 @@ func toggle_comment(t:TextEdit, head:String="", tail:String=""):
 	var cursor_c
 	
 	if not t.is_selection_active():
-		var l = t.cursor_get_line()
-		var lt = t.get_line(l)
-		wasnt_selected = lt.strip_edges() == ""
-		cursor_l = t.cursor_get_line()
-		cursor_c = t.cursor_get_column()
-		var s = len(lt) - len(lt.strip_edges(true, false))
-		t.select(l, s, l, len(t.get_line(l)))
+		var c = t.cursor_get_column()
+		t.insert_text_at_cursor(head + tail)
+		t.cursor_set_column(c + len(head))
+		return
+#		var l = t.cursor_get_line()
+#		var lt = t.get_line(l)
+#		wasnt_selected = lt.strip_edges() == ""
+#		cursor_l = t.cursor_get_line()
+#		cursor_c = t.cursor_get_column()
+#		var s = len(lt) - len(lt.strip_edges(true, false))
+#		t.select(l, s, l, len(t.get_line(l)))
+	
+#	if not t.is_selection_active():
+#		return
 	
 	var l1 = t.get_selection_from_line()
 	var c1 = t.get_selection_from_column()
@@ -51,8 +58,6 @@ func toggle_comment(t:TextEdit, head:String="", tail:String=""):
 		var l2 = l1 + len(l)-1
 		var c2 = c1 + len(l[-1])
 		t.select(l1, c1, l2, c2)
-	
-	return [old, new]
 
 func add_symbol(line:int=-1, deep:int=0, name:String="") -> Dictionary:
 	var symbol = { deep=deep, name=name, tags=[] }

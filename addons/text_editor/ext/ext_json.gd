@@ -18,11 +18,11 @@ func get_symbols(t:String):
 			last = add_symbol(i, deep, key)
 		
 		# tags
-		elif "/* #" in lines[i]:
-			for tag in lines[i].split("/* #", true, 1)[1].split("*/", true, 1)[0].split("#"):
-				tag = tag.strip_edges()
-				if tag:
-					last.tags.append(tag)
+#		elif "/* #" in lines[i]:
+#			for tag in lines[i].split("/* #", true, 1)[1].split("*/", true, 1)[0].split("#"):
+#				tag = tag.strip_edges()
+#				if tag:
+#					last.tags.append(tag)
 		
 		elif '"#": "' in lines[i]:
 			for tag in lines[i].split('"#": "', true, 1)[1].split('"', true, 1)[0].split("#"):

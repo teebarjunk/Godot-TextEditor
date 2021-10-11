@@ -19,6 +19,7 @@ var last_selection:Array = [0, 0, 0, 0]
 
 var hscroll:int = 0
 var vscroll:int = 0
+var in_focus:bool = false
 
 func _ready():
 	var _e
@@ -28,6 +29,8 @@ func _ready():
 	_e = editor.connect("file_selected", self, "_file_selected")
 	_e = editor.connect("file_renamed", self, "_file_renamed")
 	_e = connect("text_changed", self, "text_changed")
+	_e = connect("focus_entered", self, "set", ["in_focus", true])
+	_e = connect("focus_exited", self, "set", ["in_focus", false])
 	
 	if get_parent() is TabContainer:
 		get_parent().connect("tab_changed", self, "_tab_changed")
@@ -81,8 +84,19 @@ func _input(e):
 	if not editor.is_plugin_active():
 		return
 	
-	if not visible:
+	if not visible or not in_focus:
 		return
+	
+	# save files
+	if e is InputEventKey and e.pressed and e.control:
+		if e.scancode == KEY_S:
+			if modified:
+				get_tree().set_input_as_handled()
+				editor.save_files()
+		
+		if e.scancode == KEY_W and not e.shift:
+			get_tree().set_input_as_handled()
+			close()
 	
 	# remember last selection
 	if e is InputEventKey and e.pressed:

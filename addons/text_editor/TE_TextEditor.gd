@@ -116,9 +116,11 @@ func _ready():
 	popup_file = menu_file.get_popup()
 	popup_file.clear()
 	popup_file.add_font_override("font", FONT_R)
-	popup_file.add_item("New File")
-	popup_file.add_item("New Folder")
-	_e = popup_file.connect("index_pressed", self, "_menu_file")
+	popup_file.add_item("New File", 100)
+	popup_file.add_item("New Folder", 200)
+	popup_file.add_separator()
+	popup_file.add_item("Open last closed", 300)
+	_e = popup_file.connect("id_pressed", self, "_menu_file")
 	
 	# view
 	menu_view.add_font_override("font", FONT_R)
@@ -268,10 +270,14 @@ func _apply_fonts(n:Node):
 		if n.has_font("font"):
 			n.add_font_override("font", FONT_R)
 
-func _menu_file(a):
-	match menu_file.get_popup().items[a]:
-		"New File": popup_create_file()
-		"New Folder": popup_create_dir()
+func _menu_file(id):
+#	var index = popup_file.get_item_index(id)
+#	var data = popup_file.items[index]
+#	prints(id, index, data)
+	match id:
+		100: popup_create_file() # "New File"
+		200: popup_create_dir() # "New Folder"
+		300: open_last_file() # "Open last closed"
 
 func _menu_view_dir(index:int):
 	match index:
@@ -411,29 +417,32 @@ func create_dir(file_path:String):
 func _debug_pressed():
 	set_directory()
 
-func _unhandled_key_input(e:InputEventKey):
-	if not e.pressed:
-		return
-	
-	if e.control:
-		# save
-		if e.scancode == KEY_S:
-			emit_signal("save_files")
-		
-		# close/unclose tab
-		elif e.scancode == KEY_W:
-			if e.shift:
-				open_last_file()
-			else:
-				close_selected()
-		
-		elif e.scancode == KEY_R:
-			sort_files()
-		
-		else:
-			return
-	
-	get_tree().set_input_as_handled()
+#func _unhandled_key_input(e:InputEventKey):
+#	if not e.pressed:
+#		return
+#
+#	if e.control:
+#		# save
+#		if e.scancode == KEY_S:
+#			emit_signal("save_files")
+#
+#		# close/unclose tab
+#		elif e.scancode == KEY_W:
+#			if e.shift:
+#				open_last_file()
+#			else:
+#				close_selected()
+#
+#		elif e.scancode == KEY_R:
+#			sort_files()
+#
+#		else:
+#			return
+#
+#	get_tree().set_input_as_handled()
+
+func save_files():
+	emit_signal("save_files")
 
 func sort_files():
 	TE_Util.dig(file_list, self, "_sort")
