@@ -1,0 +1,81 @@
+{
+	"current": "res://",
+	"font_size": 16,
+	"tabs": {
+		"res://addons/text_editor/plugin.cfg": {
+			"hscroll": 0,
+			"vscroll": 0
+		},
+		"res://README.md": {
+			"hscroll": 0,
+			"vscroll": 30
+		},
+		"res://new_file.txt": {
+			"hscroll": 0,
+			"vscroll": 0
+		}
+	},
+	"selected": "res://README.md",
+	"show": {
+		"dir": {
+			"empty": false,
+			"hidden": true,
+			"gdignore": false,
+			"git": false,
+			"import": false,
+			"trash": false
+		},
+		"file": {
+			"hidden": false
+		}
+	},
+	"tags": [
+
+	],
+	"tag_counts": {
+		"tag1": 1,
+		"tag2": 1
+	},
+	"tags_enabled": {
+		"tag1": false,
+		"tag2": false,
+		"ass": false
+	},
+	"exts_enabled": [
+		"txt",
+		"md",
+		"json",
+		"csv",
+		"cfg",
+		"ini",
+		"yaml",
+		"txt",
+		"md",
+		"json",
+		"csv",
+		"cfg",
+		"ini",
+		"yaml",
+		"txt",
+		"md",
+		"json",
+		"csv",
+		"cfg",
+		"ini",
+		"yaml",
+		"txt",
+		"md",
+		"json",
+		"csv",
+		"cfg",
+		"ini",
+		"yaml",
+		"txt",
+		"md",
+		"json",
+		"csv",
+		"cfg",
+		"ini",
+		"yaml"
+	]
+}

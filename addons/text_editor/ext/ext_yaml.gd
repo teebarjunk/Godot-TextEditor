@@ -45,14 +45,18 @@ func toggle_comment(t:TextEdit, head:String="", tail:String=""):
 
 func apply_colors(e:TextEditor, t:TextEdit):
 	.apply_colors(e, t)
+	
 	# strings
 	t.add_color_region('"', '"', e.color_var)
 	# bools
 	t.add_keyword_color("true", e.color_var)
 	t.add_keyword_color("false", e.color_var)
 	
+	# null
+	t.add_keyword_color("~", e.color_var)
+	
 	# array element
-	t.add_color_region("- ", "", Color.webgray, true)
+	t.add_color_region("- ", "", e.color_text.darkened(.25), true)
 	
 	# comments
 	t.add_color_region("#", "", e.color_comment, true)
@@ -85,7 +89,12 @@ func get_symbols(t:String) -> Dictionary:
 					tag = tag.strip_edges()
 					if tag:
 						last.tags.append(tag)
-				
+		
+		elif '"#": "' in lines[i]:
+			for tag in lines[i].splti('"#": "', true, 1)[1].split('"', true, 1)[0].split("#"):
+				tag = tag.strip_edges()
+				if tag:
+					last.tags.append(tag)
 		
 		i += 1
 	

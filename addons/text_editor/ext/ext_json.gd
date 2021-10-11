@@ -24,6 +24,12 @@ func get_symbols(t:String):
 				if tag:
 					last.tags.append(tag)
 		
+		elif '"#": "' in lines[i]:
+			for tag in lines[i].split('"#": "', true, 1)[1].split('"', true, 1)[0].split("#"):
+				tag = tag.strip_edges()
+				if tag:
+					last.tags.append(tag)
+		
 		i += 1
 	
 	return out
@@ -36,6 +42,7 @@ func apply_colors(e:TextEditor, t:TextEdit):
 	t.add_color_region('"', '"', e.color_varname)
 	t.add_keyword_color("true", e.color_var)
 	t.add_keyword_color("false", e.color_var)
+	t.add_keyword_color("null", e.color_var)
 	
 	# comments
 	t.add_color_region("/*", "*/", e.color_comment)

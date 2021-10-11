@@ -9,11 +9,15 @@ const FONT_B:DynamicFont = preload("res://addons/text_editor/fonts/font_b.tres")
 const FONT_I:DynamicFont = preload("res://addons/text_editor/fonts/font_i.tres")
 const FONT_BI:DynamicFont = preload("res://addons/text_editor/fonts/font_bi.tres")
 
+const PATH_TRASH:String = "res://.trash"
+const PATH_TRASH_INFO:String = "res://.trash.json"
+const PATH_STATE:String = "res://.text_editor_state.json"
+
 const MAIN_EXTENSIONS:PoolStringArray = PoolStringArray([
 	"txt", "md", "json", "csv", "cfg", "ini", "yaml"
 ])
 const INTERNAL_EXTENSIONS:PoolStringArray = PoolStringArray([
-	"gd", "import", "gdignore", "gitignore"
+	"gd", "tres", "tscn", "import", "gdignore", "gitignore"
 ])
 const FILE_FILTERS:PoolStringArray = PoolStringArray([
 	"*.txt ; Text",
@@ -25,19 +29,35 @@ const FILE_FILTERS:PoolStringArray = PoolStringArray([
 	"*.yaml ; YAML",
 ])
 
+signal updated_file_list()
+signal file_opened(file_path)
+signal file_closed(file_path)
+signal file_selected(file_path)
+signal file_saved(file_path)
+signal file_renamed(old_path, new_path)
+signal symbols_updated()
+signal tags_updated()
+signal save_files()
+signal state_saved()
+signal state_loaded()
+
 var plugin = null
 var plugin_hint:bool = false
 
-# hide dirs
-var show_dir_empty:bool = true
-var show_dir_hidden:bool = true
-var show_dir_gdignore:bool = true
-#
-var show_dir_git:bool = false
-var show_dir_import:bool = false
-var show_dir_trash:bool = false
-# hide files
-var show_file_hidden:bool = true
+var show:Dictionary = {
+	dir={
+		empty=true,
+		hidden=true,
+		gdignore=true,
+		
+		git=false,
+		import=false,
+		trash=false
+	},
+	file={
+		hidden=false
+	}
+}
 
 var color_text:Color = Color.white
 var color_comment:Color = Color.white.darkened(.6)
@@ -53,23 +73,14 @@ onready var popup_unsaved:ConfirmationDialog = $popup_unsaved
 onready var file_dialog:FileDialog = $file_dialog
 onready var line_edit:LineEdit = $c/c3/c/c/line_edit
 onready var menu_file:MenuButton = $c/c/c/file_button
-var ext_menu:PopupMenu = PopupMenu.new()
-var hide_menu:PopupMenu = PopupMenu.new()
-
-signal updated_file_list()
-signal file_opened(file_path)
-signal file_closed(file_path)
-signal file_selected(file_path)
-signal file_saved(file_path)
-signal file_renamed(old_path, new_path)
-signal symbols_updated()
-signal tags_updated()
-signal save_files()
+onready var menu_view:MenuButton = $c/c/c/view_button
+var popup_file:PopupMenu
+var popup_view:PopupMenu
+var popup_view_dir:PopupMenu = PopupMenu.new()
+var popup_view_file:PopupMenu = PopupMenu.new()
 
 var current_directory:String = "res://"
-var dirs:Array = []
 var file_list:Dictionary = {}
-#var ext_counts:Dictionary = {}
 var symbols:Dictionary = {}
 var tags:Array = []
 var tags_enabled:Dictionary = {}
@@ -82,6 +93,8 @@ var closed:Array = []
 func _ready():
 	if not is_plugin_active():
 		return
+	
+	load_state()
 	
 	# not needed when editor plugin
 #	get_tree().set_auto_accept_quit(false)
@@ -100,55 +113,62 @@ func _ready():
 	
 	# menu
 	menu_file.add_font_override("font", FONT_R)
-	var p:PopupMenu = menu_file.get_popup()
-	p.clear()
-	p.add_font_override("font", FONT_R)
-	p.add_item("New File")
-	_e = p.connect("index_pressed", self, "_menu_file")
+	popup_file = menu_file.get_popup()
+	popup_file.clear()
+	popup_file.add_font_override("font", FONT_R)
+	popup_file.add_item("New File")
+	popup_file.add_item("New Folder")
+	_e = popup_file.connect("index_pressed", self, "_menu_file")
 	
-	# hide
-	hide_menu.clear()
-	hide_menu.set_name("Directories")
-	hide_menu.add_font_override("font", FONT_R)
-	hide_menu.add_check_item("Hidden", 0)
-	hide_menu.add_check_item("Empty", 1)
-	hide_menu.add_check_item(".gdignore", 2)
-	hide_menu.set_item_checked(0, show_dir_hidden)
-	hide_menu.set_item_checked(1, show_dir_gdignore)
-	hide_menu.set_item_checked(2, show_dir_empty)
-	hide_menu.add_separator()
-	hide_menu.add_check_item(".ignore/", 4)
-	hide_menu.add_check_item(".git/", 5)
-	hide_menu.add_check_item(".trash/", 6)
+	# view
+	menu_view.add_font_override("font", FONT_R)
+	popup_view = menu_view.get_popup()
+	popup_view.clear()
+	popup_view.add_font_override("font", FONT_R)
 	
-	p.add_child(hide_menu)
-	p.add_submenu_item("Directories", "Directories")
-	_e = hide_menu.connect("index_pressed", self, "_menu_hide")
+	# view/dir
+	popup_view_dir.clear()
+	popup_view_dir.set_name("Directories")
+	popup_view_dir.add_font_override("font", FONT_R)
+	popup_view_dir.add_check_item("Hidden", 0)
+	popup_view_dir.add_check_item("Empty", 1)
+	popup_view_dir.add_check_item(".gdignore", 2)
+	popup_view_dir.set_item_checked(0, show.dir.hidden)
+	popup_view_dir.set_item_checked(1, show.dir.gdignore)
+	popup_view_dir.set_item_checked(2, show.dir.empty)
+	popup_view_dir.add_separator()
+	popup_view_dir.add_check_item(".import/", 4)
+	popup_view_dir.add_check_item(".git/", 5)
+	popup_view_dir.add_check_item(".trash/", 6)
 	
-	# hide extensions
-	ext_menu.clear()
-	ext_menu.set_name("Files")
-	ext_menu.add_font_override("font", FONT_R)
-	ext_menu.add_check_item("Hidden", 0)
-	ext_menu.set_item_checked(0, show_file_hidden)
+	popup_view.add_child(popup_view_dir)
+	popup_view.add_submenu_item("Directories", "Directories")
+	_e = popup_view_dir.connect("index_pressed", self, "_menu_view_dir")
 	
-	ext_menu.add_separator()
+	# view/file
+	popup_view_file.clear()
+	popup_view_file.set_name("Files")
+	popup_view_file.add_font_override("font", FONT_R)
+	popup_view_file.add_check_item("Hidden", 0)
+	popup_view_file.set_item_checked(0, show.file.hidden)
+	
+	popup_view_file.add_separator()
 	for i in len(MAIN_EXTENSIONS):
 		var ext = MAIN_EXTENSIONS[i]
-		ext_menu.add_check_item("*." + ext, i+2)
-		ext_menu.set_item_checked(i+2, true)
+		popup_view_file.add_check_item("*." + ext, i+2)
+		popup_view_file.set_item_checked(i+2, true)
 		exts_enabled.append(ext)
 	
-	ext_menu.add_separator()
+	popup_view_file.add_separator()
 	for i in len(INTERNAL_EXTENSIONS):
 		var ext = INTERNAL_EXTENSIONS[i]
 		var id = i+len(MAIN_EXTENSIONS)+3
-		ext_menu.add_check_item("*." + ext, id)
-		ext_menu.set_item_checked(id, false)
+		popup_view_file.add_check_item("*." + ext, id)
+		popup_view_file.set_item_checked(id, false)
 	
-	p.add_child(ext_menu)
-	p.add_submenu_item("Files", "Files")
-	_e = ext_menu.connect("index_pressed", self, "_menu_extension")
+	popup_view.add_child(popup_view_file)
+	popup_view.add_submenu_item("Files", "Files")
+	_e = popup_view_file.connect("index_pressed", self, "_menu_view_file")
 	
 	# file dialog
 	_e = file_dialog.connect("file_selected", self, "_file_dialog_file")
@@ -162,6 +182,50 @@ func _ready():
 	tab_parent.add_font_override("font", FONT_R)
 	
 	set_directory()
+
+func load_state():
+	var state:Dictionary = TE_Util.load_json(PATH_STATE)
+	if not state:
+		return
+	
+	var selected
+	for file_path in state.tabs:
+		var tab = _open_file(file_path)
+		tab.set_state(state.tabs[file_path])
+		if file_path == state.selected:
+			selected = tab
+	
+	tab_parent.current_tab = selected.get_index()
+	
+	current_directory = state.current
+	show = state.show
+	tag_counts = state.tag_counts
+	tags_enabled = state.tags_enabled
+	exts_enabled = state.exts_enabled
+	
+	emit_signal("state_loaded")
+
+func save_state():
+	var state:Dictionary = {
+		"current": current_directory,
+		"font_size": FONT.size,
+		"tabs": {},
+		"selected": get_selected_file(),
+		"show": show,
+		"tags": tags,
+		"tag_counts": tag_counts,
+		"tags_enabled": tags_enabled,
+		"exts_enabled": exts_enabled
+	}
+	for tab in get_all_tabs():
+		state.tabs[tab.file_path] = tab.get_state()
+	
+	TE_Util.save_json(PATH_STATE, state)
+	emit_signal("state_saved")
+
+
+func _exit_tree():
+	save_state()
 
 # not needed when an editor plugin
 #func _notification(what):
@@ -200,36 +264,37 @@ func _apply_fonts(n:Node):
 func _menu_file(a):
 	match menu_file.get_popup().items[a]:
 		"New File": popup_create_file()
+		"New Folder": popup_create_dir()
 
-func _menu_hide(index:int):
+func _menu_view_dir(index:int):
 	match index:
 		0:
-			show_dir_hidden = not show_dir_hidden
-			hide_menu.set_item_checked(index, show_dir_hidden)
+			show.dir.hidden = not show.dir.hidden
+			popup_view_dir.set_item_checked(index, show.dir.hidden)
 		1:
-			show_dir_empty = not show_dir_empty
-			hide_menu.set_item_checked(index, show_dir_empty)
+			show.dir.empty = not show.dir.empty
+			popup_view_dir.set_item_checked(index, show.dir.empty)
 		2:
-			show_dir_gdignore = not show_dir_gdignore
-			hide_menu.set_item_checked(index, show_dir_gdignore)
+			show.dir.gdignore = not show.dir.gdignore
+			popup_view_dir.set_item_checked(index, show.dir.gdignore)
 		
 		4:
-			show_dir_import = not show_dir_import
-			hide_menu.set_item_checked(index, show_dir_import)
-		4:
-			show_dir_git = not show_dir_git
-			hide_menu.set_item_checked(index, show_dir_git)
+			show.dir.import = not show.dir.import
+			popup_view_dir.set_item_checked(index, show.dir.import)
 		5:
-			show_dir_trash = not show_dir_trash
-			hide_menu.set_item_checked(index, show_dir_trash)
+			show.dir.git = not show.dir.git
+			popup_view_dir.set_item_checked(index, show.dir.git)
+		6:
+			show.dir.trash = not show.dir.trash
+			popup_view_dir.set_item_checked(index, show.dir.trash)
 	
 	refresh_files()
 
-func _menu_extension(index:int):
+func _menu_view_file(index:int):
 	# hidden files
 	if index == 0:
-		show_file_hidden = not show_file_hidden
-		ext_menu.set_item_checked(index, show_file_hidden)
+		show.file.hidden = not show.file.hidden
+		popup_view_file.set_item_checked(index, show.file.hidden)
 	
 	# main extensions
 	elif index-2 < len(MAIN_EXTENSIONS):
@@ -239,7 +304,7 @@ func _menu_extension(index:int):
 			exts_enabled.erase(ext)
 		elif not ext in exts_enabled:
 			exts_enabled.append(ext)
-		ext_menu.set_item_checked(index, not toggled)
+		popup_view_file.set_item_checked(index, not toggled)
 		refresh_files()
 	
 	# internal extensions
@@ -250,12 +315,13 @@ func _menu_extension(index:int):
 			exts_enabled.erase(ext)
 		elif not ext in exts_enabled:
 			exts_enabled.append(ext)
-		ext_menu.set_item_checked(index, not toggled)
+		popup_view_file.set_item_checked(index, not toggled)
 		refresh_files()
 
 func _file_dialog_file(file_path:String):
 	match file_dialog.get_meta("mode"):
-		"create": create_file(file_path)
+		"create_file": create_file(file_path)
+		"create_dir": create_dir(file_path)
 
 var tab_index:int = -1
 func _tab_changed(index:int):
@@ -300,12 +366,20 @@ func is_tagged(file_path:String) -> bool:
 	return false
 
 func popup_create_file(dir:String="res://"):
-	file_dialog.set_meta("mode", "create")
-	file_dialog.current_dir = dir
-	file_dialog.current_path = "new_file.txt"
-	file_dialog.window_title = "Create File"
 	file_dialog.mode = FileDialog.MODE_SAVE_FILE
+	file_dialog.current_dir = dir
+	file_dialog.window_title = "Create File"
+	file_dialog.current_path = "new_file.txt"
 	file_dialog.filters = FILE_FILTERS
+	file_dialog.set_meta("mode", "create_file")
+	file_dialog.show()
+
+func popup_create_dir(dir:String="res://"):
+	file_dialog.mode = FileDialog.MODE_OPEN_DIR
+	file_dialog.current_dir = dir
+	file_dialog.window_title = "Create Folder"
+	file_dialog.current_path = "New Folder"
+	file_dialog.set_meta("mode", "create_dir")
 	file_dialog.show()
 
 func create_file(file_path:String):
@@ -319,6 +393,13 @@ func create_file(file_path:String):
 	else:
 		push_error("couldnt create %s" % file_path)
 
+func create_dir(file_path:String):
+	var d:Directory = Directory.new()
+	if file_path and file_path.begins_with("res://") and not d.file_exists(file_path):
+		print("creating folder \"%s\"" % file_path)
+		d.make_dir(file_path)
+		refresh_files()
+		
 func _debug_pressed():
 	set_directory()
 
@@ -383,9 +464,6 @@ func save_file(file_path:String, text:String):
 	emit_signal("file_saved", file_path)
 
 func open_last_file():
-	print("open last closed")
-	print(closed)
-	print(opened)
 	if closed:
 		var file_path = closed.pop_back()
 		open_file(file_path)
@@ -412,18 +490,22 @@ func _close_file(file_path, remember:bool=true):
 	tab.queue_free()
 	emit_signal("file_closed", file_path)
 
+func _open_file(file_path:String):
+	var tab = tab_prefab.duplicate()
+	tab.visible = true
+	tab.editor = self
+	tab_parent.add_child(tab)
+	tab.set_owner(self)
+	tab.load_file(file_path)
+	return tab
+
 func open_file(file_path:String, temporary:bool=false):
 	var tab = get_tab(file_path)
 	if tab:
 		return tab
 	
 	else:
-		tab = tab_prefab.duplicate()
-		tab.visible = true
-		tab.editor = self
-		tab_parent.add_child(tab)
-		tab.set_owner(self)
-		tab.load_file(file_path)
+		tab = _open_file(file_path)
 		if temporary:
 			tab.temporary = true
 		else:
@@ -445,7 +527,7 @@ func recycle_file(file_path:String):
 	var tab = get_tab(file_path)
 	
 	var new_file = "%s_%s.%s" % [old_name, OS.get_system_time_secs(), old_ext]
-	var new_path:String = "res://.trash".plus_file(old_base).plus_file(new_file)
+	var new_path:String = PATH_TRASH.plus_file(old_base).plus_file(new_file)
 	
 	# create directory
 	var new_dir = new_path.get_base_dir()
@@ -454,9 +536,9 @@ func recycle_file(file_path:String):
 		return
 	
 	# save recovery information
-	var trash_info = TE_Util.load_json("res://.trash_info.json")
+	var trash_info = TE_Util.load_json(PATH_TRASH_INFO)
 	trash_info[new_path] = file_path
-	TE_Util.save_json("res://.trash_info.json", trash_info)
+	TE_Util.save_json(PATH_TRASH_INFO, trash_info)
 	
 	# remove by renaming
 	rename_file(file_path, new_path)
@@ -530,7 +612,7 @@ func get_all_tabs() -> Array:
 
 func refresh_files():
 #	ext_counts.clear()
-	dirs.clear()
+#	dirs.clear()
 	file_list.clear()
 	var dir = Directory.new()
 	if dir.open(current_directory) == OK:
@@ -540,28 +622,27 @@ func refresh_files():
 	
 	sort_files()
 
-func show_dir(fname:String) -> bool:
-	if not show_dir_gdignore and File.new().file_exists(fname.plus_file(".gdignore")):
+func show_dir(fname:String, base_dir:String) -> bool:
+	if not show.dir.gdignore and File.new().file_exists(base_dir.plus_file(".gdignore")):
 		return false
 	
 	if fname.begins_with("."):
-		if not show_dir_hidden: return false
-		if not show_dir_import and fname == ".import": return false
-		if not show_dir_git and fname == ".git": return false
-		if not show_dir_trash and fname == ".trash": return false
+		if not show.dir.hidden: return false
+		if not show.dir.import and fname == ".import": return false
+		if not show.dir.git and fname == ".git": return false
+		if not show.dir.trash and fname == ".trash": return false
 	
 	return true
 
 func show_file(fname:String) -> bool:
 	if fname.begins_with("."):
-		if not show_file_hidden: return false
+		if not show.file.hidden: return false
 	
 	var ext = get_extension(fname)
 	return ext in exts_enabled
 
 func _scan_dir(id:String, path:String, dir:Directory, last_dir:Dictionary):
 	var _e = dir.list_dir_begin(true, false)
-	dirs.append(path)
 	var a_dirs_and_files = {}
 	var a_files = []
 	var a_dirs = []
@@ -573,7 +654,7 @@ func _scan_dir(id:String, path:String, dir:Directory, last_dir:Dictionary):
 		var file_path = dir.get_current_dir().plus_file(fname)
 		
 		if dir.current_is_dir():
-			if show_dir(fname):
+			if show_dir(fname, file_path.get_base_dir()):
 				var sub_dir = Directory.new()
 				sub_dir.open(file_path)
 				_scan_dir(fname, file_path, sub_dir, a_dirs_and_files)
@@ -587,20 +668,17 @@ func _scan_dir(id:String, path:String, dir:Directory, last_dir:Dictionary):
 	dir.list_dir_end()
 	
 	# is empty? ignore
-	if id and not (show_dir_empty or a_dirs_and_files):
+	if id and not (show.dir.empty or a_dirs_and_files):
 		return
 	
 	# add to last
 	last_dir[id] = info
 	
-	if path == current_directory:
-		print(JSON.print(info, "\t"))
-	
 	for p in a_dirs_and_files:
 		if a_dirs_and_files[p] is Dictionary:
 			a_dirs.append(p)
 		else:
-			a_files.append(p)
+			a_files.append(a_dirs_and_files[p])
 
 static func get_extension(file_path:String) -> String:
 	var file = file_path.get_file()

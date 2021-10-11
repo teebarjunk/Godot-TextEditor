@@ -50,11 +50,11 @@ func _redraw():
 			else:
 				x = tag
 			
-			var color = Color.white
+			var color = editor.color_text
 			var dim = 0.75
 			
 			if tag in tab_tags:
-				color = Color.greenyellow
+				color = editor.color_symbol
 				x = "[b]%s[/b]" % x
 				dim = 0.6
 				

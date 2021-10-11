@@ -42,7 +42,8 @@ func _ready():
 	# dir popup
 	dir_popup.clear()
 	dir_popup.rect_size = Vector2.ZERO
-	dir_popup.add_item("Create new file")
+	dir_popup.add_item("New File")
+	dir_popup.add_item("New Folder")
 	_e = dir_popup.connect("index_pressed", self, "_dir_popup")
 	dir_popup.add_font_override("font", TextEditor.FONT)
 	
@@ -57,8 +58,8 @@ func _dir_popup(index:int):
 	var file = p[1]
 	
 	match dir_popup.get_item_text(index):
-		"Create new file":
-			editor.popup_create_file(file)
+		"New File": editor.popup_create_file(file)
+		"New Folder": editor.popup_create_dir(file)
 
 func _file_popup(index:int):
 	var p = _meta_to_file(selected)
@@ -202,37 +203,44 @@ func _draw_dir(dir:Dictionary, deep:int):
 	sel = sel.file_path if sel else ""
 	
 	if dir.open:
-		var i = 0
-		var last = len(dir.all)-1
-		for path in dir.all:
+		# draw dirs
+		for path in dir.dirs:
 			var file_path = dir.all[path]
-			# dir
 			if file_path is Dictionary:
 				_draw_dir(file_path, deep+1)
+		
+		# draw files
+		var last = len(dir.files)-1
+		for i in len(dir.files):
+			var file_path = dir.files[i]
+			file = file_path.get_file()
+			var p = file.split(".", true, 1)
+			file = p[0]
+			var is_selected = file_path == sel
+			var ext = p[1]
+			match ext:
+				"cfg", "ini": head = "⚙" # invisible emoji
+				"json", "yaml": head = "💾" # invisible emoji
+				_: head = "┣╸" if i != last else "┗╸"
 			
-			# file
+			if "readme" in file.to_lower():
+				head = "🛈"
+			
+			if is_selected:
+				head = clr(head, Color.white.darkened(.5))
 			else:
-				file = path.get_file()
-				var is_selected = file_path == sel
-				head = "┣╸" if i != last else "┗╸"
-				if is_selected:
-					head = clr(head, Color.white.darkened(.5))
-				else:
-					head = clr(head, Color.white.darkened(.8))
-				var p = file.split(".", true, 1)
-				file = p[0]
-				
-				var color = Color.white if editor.is_tagged(file_path) else Color.white.darkened(.5)
-				
-				if editor.is_selected(file_path):
-					file = clr(file, color)
-				elif editor.is_opened(file_path):
-					file = clr(file, color.darkened(.5))
-				else:
-					file = i(clr(file, color.darkened(.75)))
-				
-				var ext = clr("." + p[1], Color.white.darkened(.75))
-				var line = space + head + file + ext
-				lines.append(url(line, "f:%s" % len(files)))
-				files.append(file_path)
-			i += 1
+				head = clr(head, Color.white.darkened(.8))
+			
+			var color = Color.white if editor.is_tagged(file_path) else Color.white.darkened(.5)
+			
+			if editor.is_selected(file_path):
+				file = clr(file, color)
+			elif editor.is_opened(file_path):
+				file = clr(file, color.darkened(.5))
+			else:
+				file = i(clr(file, color.darkened(.75)))
+			
+			ext = clr("." + ext, Color.white.darkened(.75))
+			var line = space + head + file + ext
+			lines.append(url(line, "f:%s" % len(files)))
+			files.append(file_path)

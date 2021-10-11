@@ -82,6 +82,17 @@ __meta__ = {
 "_edit_use_anchors_": false
 }
 
+[node name="view_button" type="MenuButton" parent="c/c/c"]
+margin_left = 96.0
+margin_right = 137.0
+margin_bottom = 20.0
+focus_mode = 2
+text = "view"
+items = [ "New File", null, 0, false, false, 0, 0, null, "", false, "Extensions", null, 0, false, false, 1, 0, null, "Extensions", false, "New File", null, 0, false, false, 2, 0, null, "", false, "Extensions", null, 0, false, false, 3, 0, null, "Extensions", false ]
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
 [node name="c3" type="HSplitContainer" parent="c"]
 margin_top = 34.0
 margin_right = 1024.0

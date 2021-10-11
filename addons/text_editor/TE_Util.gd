@@ -1,5 +1,15 @@
 class_name TE_Util
 
+static func load_text(path:String) -> String:
+	var f:File = File.new()
+	if f.file_exists(path):
+		var err = f.open(path, File.READ)
+		var out = f.get_as_text()
+		f.close()
+		return out
+	push_error("no file at \"%s\"" % path)
+	return ""
+	
 static func load_json(path:String) -> Dictionary:
 	var f:File = File.new()
 	if f.file_exists(path):
@@ -7,6 +17,7 @@ static func load_json(path:String) -> Dictionary:
 		var out = JSON.parse(f.get_as_text()).result
 		f.close()
 		return out
+	push_error("no json at \"%s\"" % path)
 	return {}
 
 static func save_json(path:String, data:Dictionary):

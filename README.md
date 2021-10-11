@@ -12,6 +12,7 @@ Version 1.0
 	- Creation
 	- Renaming
 	- Recycling
+- Auto save/load settings
 - Many little *Ease of life* functions:
 	- Folder open/close
 	- Comment toggling for:
@@ -58,6 +59,7 @@ This will then highlight *Files* and *Symbols* that have that tag.
 - [ ] Search
 - [ ] Find and replace
 - [ ] Meta data based on format.
-
+- [ ] Recycle folder
+- [ ] Undo recycle
 
 

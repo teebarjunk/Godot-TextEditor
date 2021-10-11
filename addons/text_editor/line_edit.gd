@@ -24,7 +24,6 @@ func display(t:String, obj:Object, fname:String):
 	call_deferred("grab_focus")
 
 func _lost_focus():
-	print("lost focus")
 	fr = null
 	hide()
 

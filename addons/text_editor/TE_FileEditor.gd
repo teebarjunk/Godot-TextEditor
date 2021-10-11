@@ -2,6 +2,8 @@ tool
 extends TextEdit
 
 var editor:TextEditor
+var _hscroll:HScrollBar
+var _vscroll:VScrollBar
 
 var helper:TE_ExtensionHelper
 var temporary:bool = false setget set_temporary
@@ -15,6 +17,9 @@ var last_shift:bool
 var last_selected:bool
 var last_selection:Array = [0, 0, 0, 0]
 
+var hscroll:int = 0
+var vscroll:int = 0
+
 func _ready():
 	var _e
 	if not editor:
@@ -23,8 +28,50 @@ func _ready():
 	_e = editor.connect("file_selected", self, "_file_selected")
 	_e = editor.connect("file_renamed", self, "_file_renamed")
 	_e = connect("text_changed", self, "text_changed")
+	
+	if get_parent() is TabContainer:
+		get_parent().connect("tab_changed", self, "_tab_changed")
+	
 	add_font_override("font", editor.FONT)
 	get_menu().add_font_override("font", editor.FONT)
+	
+	TE_Util.dig(self, self, "_node")
+
+func _node(n):
+	var _e
+	if n is HScrollBar:
+		_e = n.connect("changed", self, "_scroll_h", [n])
+	
+	elif n is VScrollBar:
+		_e = n.connect("changed", self, "_scroll_v", [n])
+		n.allow_greater = true
+
+func _scroll_h(h:HScrollBar):
+	hscroll = h.value
+
+func _scroll_v(v:VScrollBar):
+	vscroll = v.value
+	prints(file_path, vscroll)
+
+func _tab_changed(index:int):
+	var myindex = get_index()
+	if index == myindex and visible:
+		yield(get_tree(), "idle_frame")
+		set_h_scroll(hscroll)
+		set_v_scroll(vscroll)
+
+func get_state() -> Dictionary:
+	return {
+		hscroll=scroll_horizontal,
+		vscroll=scroll_vertical
+	}
+
+func set_state(state:Dictionary):
+	yield(get_tree(), "idle_frame")
+	hscroll = state.hscroll
+	vscroll = state.vscroll
+	set_h_scroll(state.hscroll)
+	set_v_scroll(state.vscroll)
 
 func _file_renamed(old_path:String, new_path:String):
 	if old_path == file_path:
@@ -89,7 +136,10 @@ func _unhandled_key_input(e):
 		get_tree().set_input_as_handled()
 
 func _file_selected(p:String):
-	if p and p == file_path:
+	if not p:
+		return
+	
+	if p == file_path:
 		grab_focus()
 		grab_click_focus()
 		update_symbols()
@@ -162,10 +212,7 @@ func _popup(msg):
 
 func load_file(path:String):
 	file_path = path
-	var f:File = File.new()
-	var _err = f.open(path, File.READ)
-	text = f.get_as_text()
-	f.close()
+	text = TE_Util.load_text(path)
 	update_name()
 	
 	# update colors
@@ -173,7 +220,6 @@ func load_file(path:String):
 	
 	helper = TextEditor.get_extension_helper(file_path)
 	helper.apply_colors(editor, self)
-	print("helper ", helper)
 
 func save_file():
 	if modified:
