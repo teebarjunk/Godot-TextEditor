@@ -24,10 +24,10 @@ _global_script_classes=[ {
 "language": "GDScript",
 "path": "res://addons/text_editor/TE_Util.gd"
 }, {
-"base": "Node",
+"base": "Control",
 "class": "TextEditor",
 "language": "GDScript",
-"path": "res://addons/text_editor/TextEditor.gd"
+"path": "res://addons/text_editor/TE_TextEditor.gd"
 } ]
 _global_script_class_icons={
 "TE_ExtensionHelper": "",
@@ -39,7 +39,7 @@ _global_script_class_icons={
 [application]
 
 config/name="TextEdit"
-run/main_scene="res://TextEditor.tscn"
+run/main_scene="res://addons/text_editor/TextEditor.tscn"
 config/icon="res://icon.png"
 
 [physics]

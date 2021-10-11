@@ -1,3 +1,4 @@
+tool
 extends TE_ExtensionHelper
 
 func apply_colors(e:TextEditor, t:TextEdit):

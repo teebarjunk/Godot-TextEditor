@@ -63,6 +63,14 @@ static func _dig_node(d:Node, f:FuncRef):
 	for i in d.get_child_count():
 		_dig_node(d.get_child(i), f)
 
+static func file_size(path:String) -> String:
+	var f:File = File.new()
+	if f.open(path, File.READ) == OK:
+		var bytes = f.get_len()
+		f.close()
+		return String.humanize_size(bytes)
+	return "-1"
+
 static func sort(d:Dictionary, reverse:bool=false) -> Dictionary:
 	return Dict.new(d).sort(reverse)
 

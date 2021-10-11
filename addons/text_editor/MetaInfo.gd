@@ -1,3 +1,4 @@
+tool
 extends TE_RichTextLabel
 
 onready var editor:TextEditor = owner

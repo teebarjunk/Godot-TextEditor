@@ -1,3 +1,4 @@
+tool
 extends TE_ExtensionHelper
 
 func _is_commented(lines) -> bool:

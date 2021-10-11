@@ -1,7 +1,7 @@
+tool
 extends TextEdit
 
-onready var tabs:TabContainer = get_parent()
-onready var editor:TextEditor = get_parent().owner
+var editor:TextEditor
 
 var helper:TE_ExtensionHelper
 var temporary:bool = false setget set_temporary
@@ -17,6 +17,8 @@ var last_selection:Array = [0, 0, 0, 0]
 
 func _ready():
 	var _e
+	if not editor:
+		editor = owner
 	_e = editor.connect("save_files", self, "save_file")
 	_e = editor.connect("file_selected", self, "_file_selected")
 	_e = editor.connect("file_renamed", self, "_file_renamed")
@@ -30,9 +32,13 @@ func _file_renamed(old_path:String, new_path:String):
 		update_name()
 
 func _input(e):
+	if not editor.is_plugin_active():
+		return
+	
 	if not visible:
 		return
 	
+	# remember last selection
 	if e is InputEventKey and e.pressed:
 		last_key = e.scancode
 		last_shift = e.shift
@@ -45,6 +51,7 @@ func _input(e):
 		else:
 			last_selected = false
 	
+	# move lines up/down
 	if e is InputEventKey and e.control and e.shift and e.pressed:
 		var f
 		var t
@@ -84,7 +91,9 @@ func _unhandled_key_input(e):
 func _file_selected(p:String):
 	if p and p == file_path:
 		grab_focus()
+		grab_click_focus()
 		update_symbols()
+		update_heading()
 
 func text_changed():
 	if last_selected:
@@ -182,7 +191,19 @@ func update_name():
 	if temporary: n = "?" + n
 	if modified: n = "*" + n
 	
-	tabs.set_tab_title(get_index(), n)
+	editor.tab_parent.set_tab_title(get_index(), n)
+	update_heading()
+
+func update_heading():
+	# set window "file (directory)"
+	var f = file_path.get_file()
+	if modified:
+		f = "*" + f
+	var d = file_path.get_base_dir().get_file()
+	if d:
+		OS.set_window_title("%s (%s)" % [f, d])
+	else:
+		OS.set_window_title(f)
 
 func needs_save() -> bool:
 	return modified or not File.new().file_exists(file_path)

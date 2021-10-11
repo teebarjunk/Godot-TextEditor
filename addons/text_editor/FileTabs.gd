@@ -1,8 +1,6 @@
-tool
 extends TabContainer
 
 onready var editor:TextEditor = owner
-
 var mouse:bool = false
 
 func _ready():

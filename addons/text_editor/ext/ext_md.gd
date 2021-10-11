@@ -1,3 +1,4 @@
+tool
 extends TE_ExtensionHelper
 
 func toggle_comment(t:TextEdit, head:String="<!-- ", tail:String=" -->"):
@@ -5,17 +6,17 @@ func toggle_comment(t:TextEdit, head:String="<!-- ", tail:String=" -->"):
 
 func apply_colors(e:TextEditor, t:TextEdit):
 	.apply_colors(e, t)
-	var code:Color = Color.aquamarine.darkened(.5)
+	var code:Color = e.color_text.darkened(.5)
 	
 	t.add_keyword_color("true", e.color_var)
 	t.add_keyword_color("false", e.color_var)
 	
 	# bold italic
-	t.add_color_region("***", "***", Color.tomato.lightened(.3), false)
+	t.add_color_region("***", "***", Color.tomato.darkened(.3), false)
 	# bold
 	t.add_color_region("**", "**", Color.tomato, false)
 	# italic
-	t.add_color_region("*", "*", Color.tomato.darkened(.3), false)
+	t.add_color_region("*", "*", Color.tomato.lightened(.3), false)
 	
 	# quote
 	t.add_color_region("> ", "", Color.white.darkened(.6), true)

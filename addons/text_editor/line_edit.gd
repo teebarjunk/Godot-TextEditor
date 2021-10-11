@@ -1,3 +1,4 @@
+tool
 extends LineEdit
 
 onready var editor:TextEditor = owner

@@ -1,3 +1,4 @@
+tool
 extends RichTextLabel
 
 onready var editor:TextEditor = owner
@@ -13,6 +14,8 @@ func _ready():
 	add_font_override("bold_font", editor.FONT_B)
 	add_font_override("italics_font", editor.FONT_I)
 	add_font_override("bold_italics_font", editor.FONT_BI)
+	
+	call_deferred("_redraw")
 
 func _hovered(_id):
 	pass

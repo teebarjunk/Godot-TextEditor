@@ -1,3 +1,4 @@
+tool
 extends TE_ExtensionHelper
 
 func toggle_comment(t:TextEdit, head:String="/*", tail:String="*/"):
