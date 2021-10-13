@@ -142,8 +142,6 @@ func _ready():
 	popup_view_dir.add_check_item(".git/", hash(".git/"))
 	popup_view_dir.add_check_item(".trash/", hash(".trash/"))
 	
-	update_checks()
-	
 	popup_view.add_child(popup_view_dir)
 	popup_view.add_submenu_item("Directories", "Directories")
 	_e = popup_view_dir.connect("index_pressed", self, "_menu_view_dir")
@@ -168,6 +166,8 @@ func _ready():
 		var id = i+len(MAIN_EXTENSIONS)+3
 		popup_view_file.add_check_item("*." + ext, id)
 		popup_view_file.set_item_checked(id, false)
+	
+	update_checks()
 	
 	popup_view.add_child(popup_view_file)
 	popup_view.add_submenu_item("Files", "Files")
@@ -249,8 +249,9 @@ func load_state():
 		tab.set_state(state.tabs[file_path])
 		if file_path == state.selected:
 			selected = tab
-		
-	tab_parent.current_tab = selected.get_index()
+	
+	if selected:
+		tab_parent.current_tab = selected.get_index()
 	
 	current_directory = state.get("current_directory", current_directory)
 	
