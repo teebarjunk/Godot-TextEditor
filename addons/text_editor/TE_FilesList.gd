@@ -209,7 +209,7 @@ func _draw_dir(dir:Dictionary, deep:int):
 		# draw dirs
 		for path in dir.dirs:
 			var file_path = dir.all[path]
-			if file_path is Dictionary:
+			if file_path is Dictionary and file_path.show:
 				_draw_dir(file_path, deep+1)
 		
 		# draw files

@@ -136,14 +136,13 @@ func _ready():
 	popup_view_dir.add_check_item("Hidden", hash("Hidden"))
 	popup_view_dir.add_check_item("Empty", hash("Empty"))
 	popup_view_dir.add_check_item(".gdignore", hash(".gdignore"))
-	popup_view_dir.set_item_checked(0, show.dir.hidden)
-	popup_view_dir.set_item_checked(1, show.dir.empty)
-	popup_view_dir.set_item_checked(2, show.dir.gdignore)
 	popup_view_dir.add_separator()
 	popup_view_dir.add_check_item("addons/", hash("addons/"))
 	popup_view_dir.add_check_item(".import/", hash(".import/"))
 	popup_view_dir.add_check_item(".git/", hash(".git/"))
 	popup_view_dir.add_check_item(".trash/", hash(".trash/"))
+	
+	update_checks()
 	
 	popup_view.add_child(popup_view_dir)
 	popup_view.add_submenu_item("Directories", "Directories")
@@ -187,6 +186,58 @@ func _ready():
 	
 	set_directory()
 
+
+
+func update_checks():
+	# Directories
+	popup_view_dir.set_item_checked(0, show.dir.hidden)
+	popup_view_dir.set_item_checked(1, show.dir.empty)
+	popup_view_dir.set_item_checked(2, show.dir.gdignore)
+	#
+	popup_view_dir.set_item_checked(4, show.dir.addons)
+	popup_view_dir.set_item_checked(5, show.dir.import)
+	popup_view_dir.set_item_checked(6, show.dir.git)
+	popup_view_dir.set_item_checked(7, show.dir.trash)
+
+	# Files
+	popup_view_file.set_item_checked(0, show.file.hidden)
+	#
+	popup_view_file.add_separator()
+	for i in len(MAIN_EXTENSIONS):
+		var ext = MAIN_EXTENSIONS[i]
+		popup_view_file.set_item_checked(i+2, true)
+	#
+	popup_view_file.add_separator()
+	for i in len(INTERNAL_EXTENSIONS):
+		var ext = INTERNAL_EXTENSIONS[i]
+		var id = i+len(MAIN_EXTENSIONS)+3
+		popup_view_file.set_item_checked(id, false)
+
+
+func save_state():
+	var state:Dictionary = {
+		"save_version": "1",
+		"current_directory": current_directory,
+		"font_size": FONT.size,
+		"tabs": {},
+		"selected": get_selected_file(),
+		"show": show,
+		"tags": tags,
+		"tag_counts": tag_counts,
+		"tags_enabled": tags_enabled,
+		"exts_enabled": exts_enabled,
+		
+		"file_list": file_list,
+		
+		"div1": $c/div1.split_offset,
+		"div2": $c/div1/div2.split_offset
+	}
+	for tab in get_all_tabs():
+		state.tabs[tab.file_path] = tab.get_state()
+	
+	TE_Util.save_json(PATH_STATE, state)
+	emit_signal("state_saved")
+
 func load_state():
 	var state:Dictionary = TE_Util.load_json(PATH_STATE)
 	if not state:
@@ -198,10 +249,10 @@ func load_state():
 		tab.set_state(state.tabs[file_path])
 		if file_path == state.selected:
 			selected = tab
-	
+		
 	tab_parent.current_tab = selected.get_index()
 	
-	current_directory = state.current
+	current_directory = state.get("current_directory", current_directory)
 	
 	for k in state.show.dir:
 		show.dir[k] = state.show.dir[k]
@@ -209,36 +260,17 @@ func load_state():
 	for k in state.show.file:
 		show.file[k] = state.show.file[k]
 	
-	tag_counts = state.tag_counts
-	tags_enabled = state.tags_enabled
-	exts_enabled = state.exts_enabled
+	update_checks()
 	
-	$c/div1.split_offset = state.div1
-	$c/div1/div2.split_offset = state.div2
+	file_list = state.get("file_list", file_list)
+	tag_counts = state.get("tag_counts", tag_counts)
+	tags_enabled = state.get("tags_enabled", tags_enabled)
+	exts_enabled = state.get("exts_enabled", exts_enabled)
+	
+	$c/div1.split_offset = state.get("div1", $c/div1.split_offset)
+	$c/div1/div2.split_offset = state.get("div2", $c/div1/div2.split_offset)
 	
 	emit_signal("state_loaded")
-
-func save_state():
-	var state:Dictionary = {
-		"save_version": "1",
-		"current": current_directory,
-		"font_size": FONT.size,
-		"tabs": {},
-		"selected": get_selected_file(),
-		"show": show,
-		"tags": tags,
-		"tag_counts": tag_counts,
-		"tags_enabled": tags_enabled,
-		"exts_enabled": exts_enabled,
-		
-		"div1": $c/div1.split_offset,
-		"div2": $c/div1/div2.split_offset
-	}
-	for tab in get_all_tabs():
-		state.tabs[tab.file_path] = tab.get_state()
-	
-	TE_Util.save_json(PATH_STATE, state)
-	emit_signal("state_saved")
 
 func _exit_tree():
 	save_state()
@@ -631,12 +663,11 @@ func get_all_tabs() -> Array:
 	return tab_parent.get_children()
 
 func refresh_files():
-#	ext_counts.clear()
-#	dirs.clear()
+	var old_file_list = file_list.duplicate(true)
 	file_list.clear()
 	var dir = Directory.new()
 	if dir.open(current_directory) == OK:
-		_scan_dir("", current_directory, dir, file_list)
+		_scan_dir("", current_directory, dir, file_list, old_file_list.get("", {}))
 		emit_signal("updated_file_list")
 	else:
 		push_error("error trying to load %s." % current_directory)
@@ -662,12 +693,13 @@ func show_file(fname:String) -> bool:
 	var ext = get_extension(fname)
 	return ext in exts_enabled
 
-func _scan_dir(id:String, path:String, dir:Directory, last_dir:Dictionary):
+func _scan_dir(id:String, path:String, dir:Directory, last_dir:Dictionary, old_last_dir:Dictionary):
 	var _e = dir.list_dir_begin(true, false)
 	var a_dirs_and_files = {}
 	var a_files = []
 	var a_dirs = []
-	var info = { file_path=path, all=a_dirs_and_files, files=a_files, dirs=a_dirs, open=true }
+	var info = { file_path=path, all=a_dirs_and_files, files=a_files, dirs=a_dirs, show=true, open=old_last_dir.get("open", true) }
+	last_dir[id] = info
 	
 	var fname = dir.get_next()
 	
@@ -678,7 +710,7 @@ func _scan_dir(id:String, path:String, dir:Directory, last_dir:Dictionary):
 			if show_dir(fname, file_path.get_base_dir()):
 				var sub_dir = Directory.new()
 				sub_dir.open(file_path)
-				_scan_dir(fname, file_path, sub_dir, a_dirs_and_files)
+				_scan_dir(fname, file_path, sub_dir, a_dirs_and_files, old_last_dir.get("all", {}).get(fname, {}))
 		
 		else:
 			if show_file(fname):
@@ -688,13 +720,6 @@ func _scan_dir(id:String, path:String, dir:Directory, last_dir:Dictionary):
 	
 	dir.list_dir_end()
 	
-	# is empty? ignore
-	if id and not (show.dir.empty or a_dirs_and_files):
-		return
-	
-	# add to last
-	last_dir[id] = info
-	
 	for p in a_dirs_and_files:
 		if a_dirs_and_files[p] is Dictionary:
 			a_dirs.append(p)
@@ -703,6 +728,10 @@ func _scan_dir(id:String, path:String, dir:Directory, last_dir:Dictionary):
 	
 	sort_on_ext(a_dirs)
 	sort_on_ext(a_files)
+	
+	# add to last
+	if id and not  (show.dir.empty or a_dirs_and_files):
+		info.show = false
 
 func sort_on_ext(items:Array):
 	var sorted = []

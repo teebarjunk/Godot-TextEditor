@@ -57,9 +57,8 @@ Click them to toggle on and off.\
 This will then highlight *Files* and *Symbols* that have that tag.
 
 # Todo
-- [ ] Preserve which folders are open/closed.
-- [ ] Search
-- [ ] Find and replace
-- [ ] Meta data based on format.
-- [ ] Recycle folder
-- [ ] Undo recycle
+- [x] `1.1` Preserve folders open/close state.
+- [ ] Search.
+- [ ] Find and replace.
+- [ ] Improvve meta data based on format.
+- [ ] Show recycle folder with revert actions.

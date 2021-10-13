@@ -56,7 +56,7 @@ func apply_colors(e:TextEditor, t:TextEdit):
 	# at/mention
 	t.add_color_region("@", " ", Color.yellowgreen, false)
 	
-	t.add_color_region(": ", "", e.color_text.lightened(.4), true)
+#	t.add_color_region(": ", "", e.color_text.lightened(.4), true)
 	
 	# tables
 	t.add_color_region("|", "", Color.tan, true)
