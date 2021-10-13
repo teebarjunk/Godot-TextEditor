@@ -9,15 +9,16 @@ static func load_text(path:String) -> String:
 		return out
 	push_error("no file at \"%s\"" % path)
 	return ""
-	
-static func load_json(path:String) -> Dictionary:
+
+static func load_json(path:String, loud:bool=false) -> Dictionary:
 	var f:File = File.new()
 	if f.file_exists(path):
 		f.open(path, File.READ)
 		var out = JSON.parse(f.get_as_text()).result
 		f.close()
 		return out
-	push_error("no json at \"%s\"" % path)
+	if loud:
+		push_error("no json at \"%s\"" % path)
 	return {}
 
 static func save_json(path:String, data:Dictionary):
