@@ -707,7 +707,7 @@ func _scan_dir(id:String, path:String, dir:Directory, last_dir:Dictionary, old_l
 		var file_path = dir.get_current_dir().plus_file(fname)
 		
 		if dir.current_is_dir():
-			if show_dir(fname, file_path.get_base_dir()):
+			if show_dir(fname, file_path):
 				var sub_dir = Directory.new()
 				sub_dir.open(file_path)
 				_scan_dir(fname, file_path, sub_dir, a_dirs_and_files, old_last_dir.get("all", {}).get(fname, {}))
