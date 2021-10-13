@@ -57,6 +57,7 @@ Click them to toggle on and off.\
 This will then highlight *Files* and *Symbols* that have that tag.
 
 # Todo
+- [ ] Preserve which folders are open/closed.
 - [ ] Search
 - [ ] Find and replace
 - [ ] Meta data based on format.
