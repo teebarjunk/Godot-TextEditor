@@ -95,8 +95,6 @@ func _ready():
 	if not is_plugin_active():
 		return
 	
-	load_state()
-	
 	# not needed when editor plugin
 #	get_tree().set_auto_accept_quit(false)
 	
@@ -167,8 +165,6 @@ func _ready():
 		popup_view_file.add_check_item("*." + ext, id)
 		popup_view_file.set_item_checked(id, false)
 	
-	update_checks()
-	
 	popup_view.add_child(popup_view_file)
 	popup_view.add_submenu_item("Files", "Files")
 	_e = popup_view_file.connect("index_pressed", self, "_menu_view_file")
@@ -184,6 +180,8 @@ func _ready():
 	#
 	tab_parent.add_font_override("font", FONT_R)
 	
+	load_state()
+	update_checks()
 	set_directory()
 
 
@@ -250,8 +248,8 @@ func load_state():
 		if file_path == state.selected:
 			selected = tab
 	
-	if selected:
-		tab_parent.current_tab = selected.get_index()
+#	if selected:
+#		tab_parent.current_tab = selected.get_index()
 	
 	current_directory = state.get("current_directory", current_directory)
 	
