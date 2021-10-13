@@ -316,7 +316,6 @@ func _menu_file(id):
 
 func _menu_view_dir(index:int):
 	var text = popup_view_dir.get_item_text(index)
-	print(text)
 	match text:
 		"Hidden":
 			show.dir.hidden = not show.dir.hidden

@@ -189,7 +189,7 @@ func text_changed():
 				insert_text_at_cursor("`%s`" % get_selection_text())
 				
 			_:
-				print(last_key)
+				pass
 			
 	if not modified:
 		if temporary:
