@@ -50,6 +50,7 @@ var show:Dictionary = {
 		hidden=true,
 		gdignore=true,
 		
+		addons=false,
 		git=false,
 		import=false,
 		trash=false
@@ -132,16 +133,17 @@ func _ready():
 	popup_view_dir.clear()
 	popup_view_dir.set_name("Directories")
 	popup_view_dir.add_font_override("font", FONT_R)
-	popup_view_dir.add_check_item("Hidden", 0)
-	popup_view_dir.add_check_item("Empty", 1)
-	popup_view_dir.add_check_item(".gdignore", 2)
+	popup_view_dir.add_check_item("Hidden", hash("Hidden"))
+	popup_view_dir.add_check_item("Empty", hash("Empty"))
+	popup_view_dir.add_check_item(".gdignore", hash(".gdignore"))
 	popup_view_dir.set_item_checked(0, show.dir.hidden)
-	popup_view_dir.set_item_checked(1, show.dir.gdignore)
-	popup_view_dir.set_item_checked(2, show.dir.empty)
+	popup_view_dir.set_item_checked(1, show.dir.empty)
+	popup_view_dir.set_item_checked(2, show.dir.gdignore)
 	popup_view_dir.add_separator()
-	popup_view_dir.add_check_item(".import/", 4)
-	popup_view_dir.add_check_item(".git/", 5)
-	popup_view_dir.add_check_item(".trash/", 6)
+	popup_view_dir.add_check_item("addons/", hash("addons/"))
+	popup_view_dir.add_check_item(".import/", hash(".import/"))
+	popup_view_dir.add_check_item(".git/", hash(".git/"))
+	popup_view_dir.add_check_item(".trash/", hash(".trash/"))
 	
 	popup_view.add_child(popup_view_dir)
 	popup_view.add_submenu_item("Directories", "Directories")
@@ -200,7 +202,13 @@ func load_state():
 	tab_parent.current_tab = selected.get_index()
 	
 	current_directory = state.current
-	show = state.show
+	
+	for k in state.show.dir:
+		show.dir[k] = state.show.dir[k]
+	
+	for k in state.show.file:
+		show.file[k] = state.show.file[k]
+	
 	tag_counts = state.tag_counts
 	tags_enabled = state.tags_enabled
 	exts_enabled = state.exts_enabled
@@ -231,7 +239,6 @@ func save_state():
 	
 	TE_Util.save_json(PATH_STATE, state)
 	emit_signal("state_saved")
-
 
 func _exit_tree():
 	save_state()
@@ -271,33 +278,35 @@ func _apply_fonts(n:Node):
 			n.add_font_override("font", FONT_R)
 
 func _menu_file(id):
-#	var index = popup_file.get_item_index(id)
-#	var data = popup_file.items[index]
-#	prints(id, index, data)
 	match id:
 		100: popup_create_file() # "New File"
 		200: popup_create_dir() # "New Folder"
 		300: open_last_file() # "Open last closed"
 
 func _menu_view_dir(index:int):
-	match index:
-		0:
+	var text = popup_view_dir.get_item_text(index)
+	print(text)
+	match text:
+		"Hidden":
 			show.dir.hidden = not show.dir.hidden
 			popup_view_dir.set_item_checked(index, show.dir.hidden)
-		1:
+		"Empty":
 			show.dir.empty = not show.dir.empty
 			popup_view_dir.set_item_checked(index, show.dir.empty)
-		2:
+		".gdignore":
 			show.dir.gdignore = not show.dir.gdignore
 			popup_view_dir.set_item_checked(index, show.dir.gdignore)
 		
-		4:
+		"addons/":
+			show.dir.addons = not show.dir.addons
+			popup_view_dir.set_item_checked(index, show.dir.addons)
+		".import/":
 			show.dir.import = not show.dir.import
 			popup_view_dir.set_item_checked(index, show.dir.import)
-		5:
+		".git/":
 			show.dir.git = not show.dir.git
 			popup_view_dir.set_item_checked(index, show.dir.git)
-		6:
+		".trash/":
 			show.dir.trash = not show.dir.trash
 			popup_view_dir.set_item_checked(index, show.dir.trash)
 	
@@ -444,13 +453,6 @@ func _debug_pressed():
 func save_files():
 	emit_signal("save_files")
 
-func sort_files():
-	TE_Util.dig(file_list, self, "_sort")
-	emit_signal("updated_file_list")
-
-func _sort(dir:Dictionary):
-	return TE_Util.sort_on_ext(dir)
-
 func get_selected_file() -> String:
 	var node = get_selected_tab()
 	return node.file_path if node else ""
@@ -560,7 +562,6 @@ func recycle_file(file_path:String):
 	
 	# remove by renaming
 	rename_file(file_path, new_path)
-	print("Send to " + new_path)
 	
 	if tab:
 		tab_parent.remove_child(tab)
@@ -636,10 +637,9 @@ func refresh_files():
 	var dir = Directory.new()
 	if dir.open(current_directory) == OK:
 		_scan_dir("", current_directory, dir, file_list)
+		emit_signal("updated_file_list")
 	else:
 		push_error("error trying to load %s." % current_directory)
-	
-	sort_files()
 
 func show_dir(fname:String, base_dir:String) -> bool:
 	if not show.dir.gdignore and File.new().file_exists(base_dir.plus_file(".gdignore")):
@@ -650,6 +650,8 @@ func show_dir(fname:String, base_dir:String) -> bool:
 		if not show.dir.import and fname == ".import": return false
 		if not show.dir.git and fname == ".git": return false
 		if not show.dir.trash and fname == ".trash": return false
+	else:
+		if not show.dir.addons and fname == "addons": return false
 	
 	return true
 
@@ -698,6 +700,25 @@ func _scan_dir(id:String, path:String, dir:Directory, last_dir:Dictionary):
 			a_dirs.append(p)
 		else:
 			a_files.append(a_dirs_and_files[p])
+	
+	sort_on_ext(a_dirs)
+	sort_on_ext(a_files)
+
+func sort_on_ext(items:Array):
+	var sorted = []
+	for a in items:
+		var k = a.get_file()
+		if "." in k:
+			k = k.split(".", true, 1)
+			k = k[1] + k[0]
+		sorted.append([k, a])
+	sorted.sort_custom(self, "_sort_on_ext")
+	for i in len(items):
+		items[i] = sorted[i][1]
+	return items
+
+func _sort_on_ext(a, b):
+	return a[0] < b[0]
 
 static func get_extension(file_path:String) -> String:
 	var file = file_path.get_file()

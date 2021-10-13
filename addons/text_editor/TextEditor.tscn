@@ -130,35 +130,7 @@ custom_fonts/italics_font = ExtResource( 10 )
 custom_fonts/bold_font = ExtResource( 11 )
 custom_fonts/normal_font = ExtResource( 12 )
 bbcode_enabled = true
-bbcode_text = "[url=add_file:0][color=#ff00ff00]+[/color][/url]
-[color=#ff4d4d4d][url=d:0][color=#ff333333][/color]🗀▼[b]test_files[/b][/url][/color]
-[url=f:0][color=#ff333333][/color][color=#ff333333]┣╸[/color][i][color=#ff404040]questish[/color][/i].[color=#ff666666]yaml[/color][/url]
-[url=f:1][color=#ff333333][/color][color=#ff333333]┣╸[/color][i][color=#ff404040]garoyle[/color][/i].[color=#ff666666]md[/color][/url]
-[url=f:2][color=#ff333333][/color][color=#ff333333]┣╸[/color][i][color=#ff404040]json[/color][/i].[color=#ff666666]json[/color][/url]
-[url=f:3][color=#ff333333][/color][color=#ff333333]┣╸[/color][i][color=#ff404040]config[/color][/i].[color=#ff666666]ini[/color][/url]
-[url=f:4][color=#ff333333][/color][color=#ff333333]┣╸[/color][i][color=#ff404040]acc[/color][/i].[color=#ff666666]csv[/color][/url]
-[color=#ff4d4d4d][url=d:1][color=#ff333333]┃ [/color]🗀▼[b]afolder[/b][/url][/color]
-[url=f:5][color=#ff333333]┃ [/color][color=#ff333333]┣╸[/color][i][color=#ff404040]new_file[/color][/i].[color=#ff666666]yaml[/color][/url]
-[url=f:6][color=#ff333333]┃ [/color][color=#ff333333]┣╸[/color][i][color=#ff404040]ass2[/color][/i].[color=#ff666666]yaml[/color][/url]
-[url=f:7][color=#ff333333]┃ [/color][color=#ff333333]┣╸[/color][i][color=#ff404040]todo[/color][/i].[color=#ff666666]md[/color][/url]
-[url=f:8][color=#ff333333]┃ [/color][color=#ff333333]┣╸[/color][i][color=#ff404040]my_fileok[/color][/i].[color=#ff666666]md[/color][/url]
-[color=#ff4d4d4d][url=d:2][color=#ff333333]┃ ┃ [/color]🗀▼[b]New Folder[/b][/url][/color]
-[url=f:9][color=#ff333333]┃ ┃ [/color][color=#ff333333]┗╸[/color][i][color=#ff404040]mor[/color][/i].[color=#ff666666]md[/color][/url]"
 meta_underlined = false
-text = "+
-🗀▼test_files
-┣╸questish.yaml
-┣╸garoyle.md
-┣╸json.json
-┣╸config.ini
-┣╸acc.csv
-┃ 🗀▼afolder
-┃ ┣╸new_file.yaml
-┃ ┣╸ass2.yaml
-┃ ┣╸todo.md
-┃ ┣╸my_fileok.md
-┃ ┃ 🗀▼New Folder
-┃ ┃ ┗╸mor.md"
 script = ExtResource( 3 )
 __meta__ = {
 "_edit_use_anchors_": false

@@ -7,7 +7,7 @@ func toggle_comment(t:TextEdit, head:String="<!-- ", tail:String=" -->"):
 func apply_colors(e:TextEditor, t:TextEdit):
 	.apply_colors(e, t)
 	
-	var code:Color = e.color_text.darkened(.5)
+	var code:Color = lerp(e.color_text.darkened(.5), Color.yellowgreen, .5)
 	
 	t.add_keyword_color("true", e.color_var)
 	t.add_keyword_color("false", e.color_var)

@@ -36,12 +36,27 @@ func _clicked(id):
 	var tag = tag_indices[int(id)]
 	editor.enable_tag(tag, not editor.is_tag_enabled(tag))
 
+func sort_tags(tags:Dictionary):
+	var sorter:Array = []
+	for tag in tags:
+		sorter.append([tag, tags[tag]])
+	
+	sorter.sort_custom(self, "_sort_tags")
+	
+	tags.clear()
+	for item in sorter:
+		tags[item[0]] = item[1]
+	return tags
+
+func _sort_tags(a, b):
+	return a[0] < b[0]
+
 func _redraw():
 	var tab = editor.get_selected_tab()
 	var tags = editor.tag_counts
 	var tab_tags = {} if not tab else tab.tags
 	
-	TE_Util.sort_value(tags)
+	sort_tags(tags)
 	
 	if not tags:
 		set_bbcode("[color=#%s][i][center]*No tags*" % [Color.webgray.to_html()])

@@ -217,7 +217,7 @@ func update_symbols():
 			else:
 				tags[tag] += 1
 	
-	var _e = TE_Util.sort(tags, true)
+#	var _e = TE_Util.sort(tags, true)
 	editor._file_symbols_updated(file_path)
 
 func close():

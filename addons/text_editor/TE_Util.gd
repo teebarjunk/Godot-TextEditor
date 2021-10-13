@@ -83,14 +83,14 @@ static func file_size(path:String) -> String:
 		return String.humanize_size(bytes)
 	return "-1"
 
-static func sort(d:Dictionary, reverse:bool=false) -> Dictionary:
-	return Dict.new(d).sort(reverse)
-
-static func sort_value(d:Dictionary, reverse:bool=false) -> Dictionary:
-	return Dict.new(d).sort_value(reverse)
-
-static func sort_on_ext(d:Dictionary, reverse:bool=false) -> Dictionary:
-	return Dict.new(d).sort_ext(reverse)
+#static func sort(d, reverse:bool=false):
+#	return Dict.new(d).sort(reverse)
+#
+#static func sort_value(d:Dictionary, reverse:bool=false) -> Dictionary:
+#	return Dict.new(d).sort_value(reverse)
+#
+#static func sort_on_ext(d:Dictionary, reverse:bool=false) -> Dictionary:
+#	return Dict.new(d).sort_ext(reverse)
 
 static func split_many(s:String, spliton:String, allow_empty:bool=true) -> PoolStringArray:
 	var parts := PoolStringArray()
@@ -116,44 +116,60 @@ static func commas(number) -> String:
 		out += number[i]
 	return out
 
-class Dict:
-	var d:Dictionary
-	var a:Array = []
-	var i:int = 0
-	
-	func _init(dict:Dictionary):
-		d = dict
-		
-	func _pop():
-		for k in d: a.append([k, d[k]])
-	
-	func _unpop() -> Dictionary:
-		d.clear()
-		for i in a: d[i[0]] = i[1]
-		return d
-	
-	func sort(reverse:bool=false) -> Dictionary:
-		_pop()
-		a.sort_custom(self, "_sort_reverse" if reverse else "_sort")
-		return _unpop()
-	
-	func sort_value(reverse:bool=false) -> Dictionary:
-		_pop()
-		i = 1
-		a.sort_custom(self, "_sort_reverse" if reverse else "_sort")
-		return _unpop()
-	
-	func sort_ext(reverse:bool=false) -> Dictionary:
-		for k in d:
-			if "." in k:
-				var p = k.split(".", true, 1)
-				p = p[1] + p[0]
-				a.append([k, d[k], p + "." + k])
-			else:
-				a.append([k, d[k], "." + k])
-		i = 2
-		a.sort_custom(self, "_sort_reverse" if reverse else "_sort")
-		return _unpop()
-	
-	func _sort(a, b): return a[i] > b[i]
-	func _sort_reverse(a, b): return a[i] < b[i]
+#class Dict:
+#	var sort_array:bool = false
+#	var d:Dictionary
+#	var a:Array
+#	var sorter:Array = []
+#	var i:int = 0
+#
+#	func _init(item):
+#		if item is Array:
+#			sort_array = true
+#			a = item
+#		else:
+#			d = item
+#
+#	func _pop():
+#		if sort_array:
+#			for i in a: sorter.append(a)
+#		else:
+#			for k in d: sorter.append([k, d[k]])
+#
+#	func _unpop():
+#		if sort_array:
+#			for i in len(sorter): a[i] = sorter[i]
+#			return a
+#		else:
+#			d.clear()
+#			for i in a: d[i[0]] = i[1]
+#			return d
+#
+#	func sort(reverse:bool=false):
+#		_pop()
+#		a.sort_custom(self, "_sort_reverse" if reverse else "_sort")
+#		return _unpop()
+#
+#	func sort_value(reverse:bool=false):
+#		_pop()
+#		i = 1
+#		a.sort_custom(self, "_sort_reverse" if reverse else "_sort")
+#		return _unpop()
+#
+#	func sort_ext(reverse:bool=false):
+#		if sort_array:
+#			for x in a:
+#				if "." in a:
+#		for k in d:
+#			if "." in k:
+#				var p = k.split(".", true, 1)
+#				p = p[1] + p[0]
+#				a.append([k, d[k], p + "." + k])
+#			else:
+#				a.append([k, d[k], "." + k])
+#		i = 2
+#		a.sort_custom(self, "_sort_reverse" if reverse else "_sort")
+#		return _unpop()
+#
+#	func _sort(a, b): return a[i] > b[i]
+#	func _sort_reverse(a, b): return a[i] < b[i]
