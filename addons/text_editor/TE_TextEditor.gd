@@ -349,7 +349,6 @@ func _menu_view_file(index:int):
 		var text = popup_view_file.get_item_text(index)
 		var ext = text.substr(2)
 		if ext in exts_enabled:
-			prints(index, text)
 			exts_enabled[ext] = not exts_enabled[ext]
 			popup_view_file.set_item_checked(index, exts_enabled[ext])
 	

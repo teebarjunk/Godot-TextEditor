@@ -120,7 +120,6 @@ func _input(e:InputEvent):
 						editor.add_child(drag_label)
 			
 			else:
-				prints(dragging, dragging != hovered, type, file)
 				if dragging and dragging != hovered:
 					var p2 = _meta_to_file(dragging)
 					var drag_type = p2[0]
