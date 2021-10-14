@@ -60,9 +60,9 @@ This will then highlight *Files* and *Symbols* that have that tag.
 - [x] `1.1` Preserve folders open/close state.
 - [ ] Search.
 - [ ] Find and replace.
-- [ ] Improvve meta data based on format.
-- [ ] Show recycle folder with revert actions.
+- [ ] Improve meta data based on format.
+- [x] `1.2` Recycle folders.
+- [x] `1.2` Unrecylce. (Toggle `view/directories/.trash` and press green arrow.
 - [ ] Add your own `allow/block` list for file extensions.
 - [ ] JSON formatting.
 - [ ] JSON error testing.
-- [ ] Auto open/close quotes in MD and TXT.

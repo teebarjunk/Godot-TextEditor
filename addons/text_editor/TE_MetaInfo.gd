@@ -7,6 +7,10 @@ func _ready():
 	var _e
 	_e = editor.connect("file_selected", self, "_file_selected")
 	_e = editor.connect("file_saved", self, "_file_saved")
+	_e = connect("resized", self, "_resized")
+
+func _resized():
+	add_constant_override("table_hseparation", int(rect_size.x / 6.0))
 
 func _unhandled_key_input(e):
 	if e.scancode == KEY_M and e.pressed:

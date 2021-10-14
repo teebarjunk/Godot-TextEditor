@@ -10,7 +10,6 @@ const FONT_I:DynamicFont = preload("res://addons/text_editor/fonts/font_i.tres")
 const FONT_BI:DynamicFont = preload("res://addons/text_editor/fonts/font_bi.tres")
 
 const PATH_TRASH:String = "res://.trash"
-const PATH_TRASH_INFO:String = "res://.trash.json"
 const PATH_STATE:String = "res://.text_editor_state.json"
 
 const MAIN_EXTENSIONS:PoolStringArray = PoolStringArray([
@@ -337,6 +336,7 @@ func _menu_view_dir(index:int):
 			popup_view_dir.set_item_checked(index, show.dir.trash)
 	
 	refresh_files()
+	save_state()
 
 func _menu_view_file(index:int):
 	# hidden files
@@ -352,6 +352,9 @@ func _menu_view_file(index:int):
 			prints(index, text)
 			exts_enabled[ext] = not exts_enabled[ext]
 			popup_view_file.set_item_checked(index, exts_enabled[ext])
+	
+	refresh_files()
+	save_state()
 
 func _file_dialog_file(file_path:String):
 	match file_dialog.get_meta("mode"):
@@ -527,34 +530,51 @@ func is_opened(file_path:String) -> bool:
 func is_selected(file_path:String) -> bool:
 	return get_selected_file() == file_path
 
-func recycle_file(file_path:String):
-	var old_base:String = file_path.substr(len("res://")).get_base_dir()
-	var p = file_path.get_file().split(".", true, 1)
-	var old_name:String = p[0]
-	var old_ext:String = p[1]
-	var tab = get_tab(file_path)
+func unrecycle(file_path:String):
+	var op = file_path.plus_file(".old_path")
+	var np = file_path.plus_file(".new_path")
+	var d:Directory = Directory.new()
+	if d.file_exists(op) and d.file_exists(np):
+		var old_path:String = TE_Util.load_text(np)
+		var new_path:String = TE_Util.load_text(op)
+		d.rename(old_path, new_path)
+		d.remove(op)
+		d.remove(np)
+		d.remove(file_path)
+		refresh_files()
+	else:
+		print("can't unrecyle")
 	
-	var new_file = "%s_%s.%s" % [old_name, OS.get_system_time_secs(), old_ext]
-	var new_path:String = PATH_TRASH.plus_file(old_base).plus_file(new_file)
-	
-	# create directory
-	var new_dir = new_path.get_base_dir()
-	if Directory.new().make_dir_recursive(new_dir) != OK:
-		print("couldn't remove %s" % file_path)
+func recycle(file_path:String):
+	if file_path.begins_with(PATH_TRASH):
+		push_error("can't recycle recycled.")
 		return
 	
-	# save recovery information
-	var trash_info = TE_Util.load_json(PATH_TRASH_INFO)
-	trash_info[new_path] = file_path
-	TE_Util.save_json(PATH_TRASH_INFO, trash_info)
+	var tab = get_tab(file_path)
 	
-	# remove by renaming
-	rename_file(file_path, new_path)
+	var time = str(OS.get_system_time_secs())
+	var old_path:String = file_path
+	var d:Directory = Directory.new()
+	
+	# is dir?
+	var base_name = file_path.get_file()
+	var new_dir = PATH_TRASH.plus_file(time)
+	var new_path = new_dir.plus_file(base_name)
+	
+	if not d.dir_exists(PATH_TRASH):
+		var _err = d.make_dir(PATH_TRASH)
+	
+	var _err = d.make_dir(new_dir)
+	d.rename(file_path, new_path)
+	save_file(new_dir.plus_file(".old_path"), old_path)
+	save_file(new_dir.plus_file(".new_path"), new_path)
+	
+	refresh_files()
 	
 	if tab:
 		tab_parent.remove_child(tab)
 		tab.queue_free()
-		
+	
 		if opened:
 			select_file(opened[-1])
 
@@ -647,7 +667,7 @@ func show_file(fname:String) -> bool:
 		if not show.file.hidden: return false
 	
 	var ext = get_extension(fname)
-	return ext in exts_enabled
+	return exts_enabled.get(ext, false)
 
 func _scan_dir(id:String, path:String, dir:Directory, last_dir:Dictionary, old_last_dir:Dictionary):
 	var _e = dir.list_dir_begin(true, false)
@@ -677,8 +697,6 @@ func _scan_dir(id:String, path:String, dir:Directory, last_dir:Dictionary, old_l
 		else:
 			if show_file(fname):
 				a_dirs_and_files[fname] = file_path
-			else:
-				print("bad file ", fname)
 		
 		fname = dir.get_next()
 	
@@ -692,10 +710,6 @@ func _scan_dir(id:String, path:String, dir:Directory, last_dir:Dictionary, old_l
 	
 	sort_on_ext(a_dirs)
 	sort_on_ext(a_files)
-	
-	prints("DIRS", a_dirs)
-	prints("FILES", a_files)
-	prints("ALL", a_dirs_and_files.keys())
 	
 	if id and not (show.dir.empty or a_files):
 		info.show = false

@@ -15,6 +15,7 @@ var hovered:String = ""
 var dragging:String = ""
 var drag_start:Vector2
 
+
 func _ready():
 	var _e
 	_e = editor.connect("updated_file_list", self, "_redraw")
@@ -44,6 +45,8 @@ func _ready():
 	dir_popup.rect_size = Vector2.ZERO
 	dir_popup.add_item("New File")
 	dir_popup.add_item("New Folder")
+	dir_popup.add_separator()
+	dir_popup.add_item("Remove")
 	_e = dir_popup.connect("index_pressed", self, "_dir_popup")
 	dir_popup.add_font_override("font", TextEditor.FONT)
 	
@@ -60,6 +63,7 @@ func _dir_popup(index:int):
 	match dir_popup.get_item_text(index):
 		"New File": editor.popup_create_file(file)
 		"New Folder": editor.popup_create_dir(file)
+		"Remove": editor.recycle(file)
 
 func _file_popup(index:int):
 	var p = _meta_to_file(selected)
@@ -75,7 +79,7 @@ func _file_popup(index:int):
 		
 		"Remove":
 			if type == "f":
-				editor.recycle_file(file)
+				editor.recycle(file)
 		
 		_:
 			selected = {}
@@ -104,24 +108,31 @@ func _input(e:InputEvent):
 		if e.button_index == BUTTON_LEFT:
 			
 			if e.pressed:
-				dragging = hovered
-				
-				if type == "f":
-					drag_label = DragLabel.new()
-					drag_label.editor = editor
-					drag_label.set_bbcode(file.get_file())
-					editor.add_child(drag_label)
+				if type in ["f", "d"]:
+					if file.begins_with(editor.PATH_TRASH):
+						return # can't move recycling
+					
+					else:
+						dragging = hovered
+						
+						drag_label = DragLabel.new(file.get_file())
+						drag_label.editor = editor
+						editor.add_child(drag_label)
 			
 			else:
+				prints(dragging, dragging != hovered, type, file)
 				if dragging and dragging != hovered:
 					var p2 = _meta_to_file(dragging)
-					var drag_type = p[0]
-					var drag_file = p[1]
-					if drag_type == "f" and type == "d":
+					var drag_type = p2[0]
+					var drag_file = p2[1]
+					
+					if type == "d":
 						var dir:String = file
 						var old_path:String = drag_file
 						var new_path:String = dir.plus_file(old_path.get_file())
 						editor.rename_file(old_path, new_path)
+					
+					dragging = ""
 				
 				else:
 					match type:
@@ -129,6 +140,10 @@ func _input(e:InputEvent):
 						"d":
 							p[2].open = not p[2].open
 							_redraw()
+						
+						# unrecycle
+						"unrecycle":
+							editor.unrecycle(file)
 						
 						# select
 						"f":
@@ -154,7 +169,7 @@ func _meta_to_file(m:String):
 	var type = p[0]
 	var index = int(p[1])
 	match type:
-		"d":
+		"d", "unrecycle":
 			return [type, dirs[index].file_path, dirs[index]]
 		"f":
 			return [type, files[index]]
@@ -164,6 +179,7 @@ func _meta_entered(m):
 	var f = _meta_to_file(m)
 	match f[0]:
 		"f", "d": hint_tooltip = f[1]
+		"unrecycle": hint_tooltip = "Unrecycle %s" % f[1]
 
 func _meta_exited(_m):
 	hovered = ""
@@ -199,6 +215,8 @@ func _draw_dir(dir:Dictionary, deep:int):
 	var head:String = "▼" if dir.open else "▶"
 	var dir_index:int = len(dirs)
 	var link:String = url(space+clr(FOLDER+head, Color.white.darkened(.5))+" "+name, "d:%s" % dir_index)
+	if file.begins_with(editor.PATH_TRASH) and file.count("/") == 3:
+		link += " " + url(clr("⬅", Color.yellowgreen), "unrecycle:%s" % dir_index)
 	lines.append(clr(link, Color.white.darkened(dimmest)))
 	dirs.append(dir)
 	

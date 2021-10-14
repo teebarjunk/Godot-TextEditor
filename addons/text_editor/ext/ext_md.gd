@@ -25,14 +25,20 @@ func apply_colors(e:TextEditor, t:TextEdit):
 	
 	# headings
 	var head = e.color_symbol
-	t.add_color_region("# *", "*", TE_Util.hue_shift(head, -.33), true)
-	t.add_color_region("# \"", "\"", TE_Util.hue_shift(head, .33), true)
-	t.add_color_region("# ", "", head, true)
-	t.add_color_region("## ", "", head, true)
-	t.add_color_region("### ", "", head, true)
-	t.add_color_region("#### ", "", head, true)
-	t.add_color_region("##### ", "", head, true)
-	t.add_color_region("###### ", "", head, true)
+	var tint1 = TE_Util.hue_shift(head, -.33)
+	var tint2 = TE_Util.hue_shift(head, .33)
+	for i in range(1, 6):
+		var h = "#".repeat(i)
+		t.add_color_region("%s *" % h, "*", tint1, true)
+		t.add_color_region("%s \"" % h, "\"", tint2, true)
+		t.add_color_region("%s " % h, "*", head, true)
+#	t.add_color_region("# \"", "\"", TE_Util.hue_shift(head, .33), true)
+#	t.add_color_region("# ", "", head, true)
+#	t.add_color_region("## ", "", head, true)
+#	t.add_color_region("### ", "", head, true)
+#	t.add_color_region("#### ", "", head, true)
+#	t.add_color_region("##### ", "", head, true)
+#	t.add_color_region("###### ", "", head, true)
 	
 	# url links
 	t.add_color_region("![", ")", e.color_var.lightened(.5))
