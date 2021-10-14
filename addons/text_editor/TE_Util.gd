@@ -83,6 +83,9 @@ static func file_size(path:String) -> String:
 		return String.humanize_size(bytes)
 	return "-1"
 
+static func hue_shift(c:Color, h:float) -> Color:
+	return c.from_hsv(wrapf(c.h + h, 0.0, 1.0), c.s, c.v, c.a)
+
 #static func sort(d, reverse:bool=false):
 #	return Dict.new(d).sort(reverse)
 #

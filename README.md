@@ -62,3 +62,7 @@ This will then highlight *Files* and *Symbols* that have that tag.
 - [ ] Find and replace.
 - [ ] Improvve meta data based on format.
 - [ ] Show recycle folder with revert actions.
+- [ ] Add your own `allow/block` list for file extensions.
+- [ ] JSON formatting.
+- [ ] JSON error testing.
+- [ ] Auto open/close quotes in MD and TXT.

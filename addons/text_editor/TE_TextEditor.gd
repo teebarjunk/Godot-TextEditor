@@ -86,7 +86,7 @@ var symbols:Dictionary = {}
 var tags:Array = []
 var tags_enabled:Dictionary = {}
 var tag_counts:Dictionary = {}
-var exts_enabled:Array = []
+var exts_enabled:Dictionary = {}
 
 var opened:Array = []
 var closed:Array = []
@@ -154,14 +154,15 @@ func _ready():
 	popup_view_file.add_separator()
 	for i in len(MAIN_EXTENSIONS):
 		var ext = MAIN_EXTENSIONS[i]
+		exts_enabled[ext] = true
 		popup_view_file.add_check_item("*." + ext, i+2)
 		popup_view_file.set_item_checked(i+2, true)
-		exts_enabled.append(ext)
 	
 	popup_view_file.add_separator()
 	for i in len(INTERNAL_EXTENSIONS):
 		var ext = INTERNAL_EXTENSIONS[i]
 		var id = i+len(MAIN_EXTENSIONS)+3
+		exts_enabled[ext] = false
 		popup_view_file.add_check_item("*." + ext, id)
 		popup_view_file.set_item_checked(id, false)
 	
@@ -184,8 +185,6 @@ func _ready():
 	update_checks()
 	set_directory()
 
-
-
 func update_checks():
 	# Directories
 	popup_view_dir.set_item_checked(0, show.dir.hidden)
@@ -200,17 +199,15 @@ func update_checks():
 	# Files
 	popup_view_file.set_item_checked(0, show.file.hidden)
 	#
-	popup_view_file.add_separator()
 	for i in len(MAIN_EXTENSIONS):
 		var ext = MAIN_EXTENSIONS[i]
-		popup_view_file.set_item_checked(i+2, true)
+#		popup_view_file.set_item_checked(i+2, exts_enabled)
 	#
-	popup_view_file.add_separator()
 	for i in len(INTERNAL_EXTENSIONS):
 		var ext = INTERNAL_EXTENSIONS[i]
 		var id = i+len(MAIN_EXTENSIONS)+3
-		popup_view_file.set_item_checked(id, false)
-
+#		popup_view_file.set_item_checked(id, false)
+		# TODOOO
 
 func save_state():
 	var state:Dictionary = {
@@ -248,41 +245,40 @@ func load_state():
 		if file_path == state.selected:
 			selected = tab
 	
-#	if selected:
-#		tab_parent.current_tab = selected.get_index()
-	
 	current_directory = state.get("current_directory", current_directory)
 	
-	for k in state.show.dir:
-		show.dir[k] = state.show.dir[k]
-	
-	for k in state.show.file:
-		show.file[k] = state.show.file[k]
+	_load_property(state, "show", true)
 	
 	update_checks()
 	
-	file_list = state.get("file_list", file_list)
-	tag_counts = state.get("tag_counts", tag_counts)
-	tags_enabled = state.get("tags_enabled", tags_enabled)
-	exts_enabled = state.get("exts_enabled", exts_enabled)
+	_load_property(state, "file_list")
+	_load_property(state, "tag_counts")
+	_load_property(state, "tags_enabled")
+	_load_property(state, "exts_enabled")
 	
 	$c/div1.split_offset = state.get("div1", $c/div1.split_offset)
 	$c/div1/div2.split_offset = state.get("div2", $c/div1/div2.split_offset)
 	
 	emit_signal("state_loaded")
 
+func _load_property(state:Dictionary, property:String, merge:bool=false):
+	if property in state and typeof(state[property]) == typeof(self[property]):
+		if merge:
+			_merge(self[property], state[property])
+		else:
+			self[property] = state[property]
+
+func _merge(target:Dictionary, patch:Dictionary):
+	for k in patch:
+		if patch[k] is Dictionary:
+			if not k in target:
+				target[k] = {}
+			_merge(target[k], patch[k])
+		else:
+			target[k] = patch[k]
+
 func _exit_tree():
 	save_state()
-
-# not needed when an editor plugin
-#func _notification(what):
-#	match what:
-#		MainLoop.NOTIFICATION_WM_QUIT_REQUEST:
-#			for tab in get_all_tabs():
-#				if tab.modified:
-#					popup.show()
-#					return
-#			get_tree().quit()
 
 func is_plugin_active():
 	if not Engine.editor_hint:
@@ -349,26 +345,13 @@ func _menu_view_file(index:int):
 		popup_view_file.set_item_checked(index, show.file.hidden)
 	
 	# main extensions
-	elif index-2 < len(MAIN_EXTENSIONS):
-		var ext = MAIN_EXTENSIONS[index-2]
-		var toggled = ext in exts_enabled
-		if toggled:
-			exts_enabled.erase(ext)
-		elif not ext in exts_enabled:
-			exts_enabled.append(ext)
-		popup_view_file.set_item_checked(index, not toggled)
-		refresh_files()
-	
-	# internal extensions
-	elif index-3-len(MAIN_EXTENSIONS) < len(INTERNAL_EXTENSIONS):
-		var ext = INTERNAL_EXTENSIONS[index-3-len(MAIN_EXTENSIONS)]
-		var toggled = ext in exts_enabled
-		if toggled:
-			exts_enabled.erase(ext)
-		elif not ext in exts_enabled:
-			exts_enabled.append(ext)
-		popup_view_file.set_item_checked(index, not toggled)
-		refresh_files()
+	else:
+		var text = popup_view_file.get_item_text(index)
+		var ext = text.substr(2)
+		if ext in exts_enabled:
+			prints(index, text)
+			exts_enabled[ext] = not exts_enabled[ext]
+			popup_view_file.set_item_checked(index, exts_enabled[ext])
 
 func _file_dialog_file(file_path:String):
 	match file_dialog.get_meta("mode"):
@@ -455,30 +438,6 @@ func create_dir(file_path:String):
 		
 func _debug_pressed():
 	set_directory()
-
-#func _unhandled_key_input(e:InputEventKey):
-#	if not e.pressed:
-#		return
-#
-#	if e.control:
-#		# save
-#		if e.scancode == KEY_S:
-#			emit_signal("save_files")
-#
-#		# close/unclose tab
-#		elif e.scancode == KEY_W:
-#			if e.shift:
-#				open_last_file()
-#			else:
-#				close_selected()
-#
-#		elif e.scancode == KEY_R:
-#			sort_files()
-#
-#		else:
-#			return
-#
-#	get_tree().set_input_as_handled()
 
 func save_files():
 	emit_signal("save_files")
@@ -567,7 +526,6 @@ func is_opened(file_path:String) -> bool:
 
 func is_selected(file_path:String) -> bool:
 	return get_selected_file() == file_path
-
 
 func recycle_file(file_path:String):
 	var old_base:String = file_path.substr(len("res://")).get_base_dir()
@@ -696,7 +654,13 @@ func _scan_dir(id:String, path:String, dir:Directory, last_dir:Dictionary, old_l
 	var a_dirs_and_files = {}
 	var a_files = []
 	var a_dirs = []
-	var info = { file_path=path, all=a_dirs_and_files, files=a_files, dirs=a_dirs, show=true, open=old_last_dir.get("open", true) }
+	var info = {
+		file_path=path,
+		all=a_dirs_and_files,
+		files=a_files,
+		dirs=a_dirs,
+		show=true,
+		open=old_last_dir.get("open", true) }
 	last_dir[id] = info
 	
 	var fname = dir.get_next()
@@ -713,6 +677,8 @@ func _scan_dir(id:String, path:String, dir:Directory, last_dir:Dictionary, old_l
 		else:
 			if show_file(fname):
 				a_dirs_and_files[fname] = file_path
+			else:
+				print("bad file ", fname)
 		
 		fname = dir.get_next()
 	
@@ -727,9 +693,14 @@ func _scan_dir(id:String, path:String, dir:Directory, last_dir:Dictionary, old_l
 	sort_on_ext(a_dirs)
 	sort_on_ext(a_files)
 	
-	# add to last
-	if id and not  (show.dir.empty or a_dirs_and_files):
+	prints("DIRS", a_dirs)
+	prints("FILES", a_files)
+	prints("ALL", a_dirs_and_files.keys())
+	
+	if id and not (show.dir.empty or a_files):
 		info.show = false
+	
+	return info
 
 func sort_on_ext(items:Array):
 	var sorted = []

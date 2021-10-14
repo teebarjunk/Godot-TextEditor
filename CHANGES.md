@@ -1,3 +1,6 @@
+# 1.2
+- Empty directories properly hide if they have no subdirectories.
+
 # 1.1
 - Added `addons` folder hider option.
 - Preserve folder open/close state.
