@@ -1,10 +1,14 @@
 tool
 extends "res://addons/text_editor/TE_RichTextLabel.gd"
 
+var hscrolls:Dictionary = {}
+
 func _ready():
 	var _e
 	_e = editor.connect("symbols_updated", self, "_redraw")
 	_e = editor.connect("tags_updated", self, "_redraw")
+	_e = editor.connect("file_selected", self, "_file_selected")
+	_e = get_v_scroll().connect("value_changed", self, "_scrolling")
 	
 	add_font_override("normal_font", editor.FONT_R)
 	add_font_override("bold_font", editor.FONT_B)
@@ -12,6 +16,13 @@ func _ready():
 	add_font_override("bold_italics_font", editor.FONT_BI)
 	
 	call_deferred("_redraw")
+
+func _file_selected(file_path:String):
+	yield(get_tree(), "idle_frame")
+	get_v_scroll().value = hscrolls.get(file_path, 0)
+
+func _scrolling(v):
+	hscrolls[editor.get_selected_file()] = get_v_scroll().value
 
 func _clicked(args:Array):
 	var te:TextEdit = editor.get_selected_tab()
@@ -44,7 +55,14 @@ func _redraw():
 			var symbol_info = symbols[line_index]
 			var deep = symbol_info.deep
 			var space = "" if not deep else clr("-".repeat(deep), Color.white.darkened(.75))
-			var cl = Color.deepskyblue if deep == 0 else Color.white
+			var cl = Color.white
+			
+			if deep == 0:
+				cl = editor.color_symbol
+				if symbol_info.name.begins_with("*") and symbol_info.name.ends_with("*"):
+					cl = TE_Util.hue_shift(cl, -.33)
+				elif symbol_info.name.begins_with('"') and symbol_info.name.ends_with('"'):
+					cl = TE_Util.hue_shift(cl, .33)
 			
 			if not editor.is_tagged_or_visible(symbol_info.tags):
 				cl = cl.darkened(.7)

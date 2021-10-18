@@ -1,7 +1,7 @@
-[gd_scene load_steps=24 format=2]
+[gd_scene load_steps=25 format=2]
 
 [ext_resource path="res://addons/text_editor/TE_Console.gd" type="Script" id=1]
-[ext_resource path="res://addons/text_editor/TE_TextEditor.gd" type="Script" id=2]
+[ext_resource path="res://addons/text_editor/TE_Editor.gd" type="Script" id=2]
 [ext_resource path="res://addons/text_editor/TE_FilesList.gd" type="Script" id=3]
 [ext_resource path="res://addons/text_editor/TE_FileEditor.gd" type="Script" id=4]
 [ext_resource path="res://addons/text_editor/TE_SymbolsList.gd" type="Script" id=5]
@@ -34,6 +34,9 @@ TooltipLabel/fonts/font = ExtResource( 12 )
 TooltipLabel/fonts/font = ExtResource( 12 )
 
 [sub_resource type="Theme" id=6]
+TooltipLabel/fonts/font = ExtResource( 12 )
+
+[sub_resource type="Theme" id=7]
 TooltipLabel/fonts/font = ExtResource( 12 )
 
 [node name="text_editor" type="Control"]
@@ -76,23 +79,23 @@ __meta__ = {
 
 [node name="c" type="PanelContainer" parent="c"]
 margin_right = 1024.0
-margin_bottom = 34.0
+margin_bottom = 38.0
 
 [node name="c" type="HBoxContainer" parent="c/c"]
 margin_left = 7.0
 margin_top = 7.0
 margin_right = 1017.0
-margin_bottom = 27.0
+margin_bottom = 31.0
 
 [node name="test" type="Button" parent="c/c/c"]
 margin_right = 12.0
-margin_bottom = 20.0
+margin_bottom = 24.0
 text = "⟳"
 
 [node name="file_button" type="MenuButton" parent="c/c/c"]
 margin_left = 16.0
 margin_right = 48.0
-margin_bottom = 20.0
+margin_bottom = 24.0
 text = "file"
 items = [ "New File", null, 0, false, false, 0, 0, null, "", false, "Extensions", null, 0, false, false, 1, 0, null, "Extensions", false, "New File", null, 0, false, false, 2, 0, null, "", false, "Extensions", null, 0, false, false, 3, 0, null, "Extensions", false ]
 __meta__ = {
@@ -102,7 +105,7 @@ __meta__ = {
 [node name="view_button" type="MenuButton" parent="c/c/c"]
 margin_left = 52.0
 margin_right = 93.0
-margin_bottom = 20.0
+margin_bottom = 24.0
 focus_mode = 2
 text = "view"
 items = [ "New File", null, 0, false, false, 0, 0, null, "", false, "Extensions", null, 0, false, false, 1, 0, null, "Extensions", false, "New File", null, 0, false, false, 2, 0, null, "", false, "Extensions", null, 0, false, false, 3, 0, null, "Extensions", false ]
@@ -110,8 +113,14 @@ __meta__ = {
 "_edit_use_anchors_": false
 }
 
+[node name="word_wrap" type="CheckBox" parent="c/c/c"]
+margin_left = 97.0
+margin_right = 155.0
+margin_bottom = 24.0
+text = "wrap"
+
 [node name="div1" type="HSplitContainer" parent="c"]
-margin_top = 34.0
+margin_top = 38.0
 margin_right = 1024.0
 margin_bottom = 600.0
 size_flags_vertical = 3
@@ -122,7 +131,7 @@ __meta__ = {
 
 [node name="c2" type="PanelContainer" parent="c/div1"]
 margin_right = 206.0
-margin_bottom = 566.0
+margin_bottom = 562.0
 rect_min_size = Vector2( 200, 0 )
 size_flags_horizontal = 3
 size_flags_vertical = 3
@@ -131,7 +140,7 @@ size_flags_vertical = 3
 margin_left = 7.0
 margin_top = 7.0
 margin_right = 199.0
-margin_bottom = 559.0
+margin_bottom = 555.0
 size_flags_horizontal = 3
 size_flags_vertical = 3
 
@@ -167,7 +176,7 @@ items = [ "New File", null, 0, false, false, 0, 0, null, "", false, "New Folder"
 [node name="div2" type="HSplitContainer" parent="c/div1"]
 margin_left = 218.0
 margin_right = 1024.0
-margin_bottom = 566.0
+margin_bottom = 562.0
 size_flags_horizontal = 3
 size_flags_vertical = 3
 split_offset = -80
@@ -177,7 +186,7 @@ __meta__ = {
 
 [node name="c" type="VBoxContainer" parent="c/div1/div2"]
 margin_right = 614.0
-margin_bottom = 566.0
+margin_bottom = 562.0
 size_flags_horizontal = 3
 size_flags_vertical = 3
 
@@ -190,14 +199,14 @@ script = ExtResource( 8 )
 
 [node name="c" type="VSplitContainer" parent="c/div1/div2/c"]
 margin_right = 614.0
-margin_bottom = 566.0
+margin_bottom = 562.0
 size_flags_horizontal = 3
 size_flags_vertical = 3
 split_offset = -200
 
 [node name="tab_container" type="TabContainer" parent="c/div1/div2/c/c"]
 margin_right = 614.0
-margin_bottom = 566.0
+margin_bottom = 562.0
 size_flags_horizontal = 3
 size_flags_vertical = 3
 custom_fonts/font = ExtResource( 12 )
@@ -224,9 +233,35 @@ margin_right = -4.0
 margin_bottom = -4.0
 size_flags_horizontal = 3
 size_flags_vertical = 3
+theme = SubResource( 2 )
+custom_fonts/bold_italics_font = ExtResource( 13 )
+custom_fonts/italics_font = ExtResource( 10 )
+custom_fonts/bold_font = ExtResource( 11 )
+custom_fonts/normal_font = ExtResource( 12 )
 bbcode_enabled = true
 meta_underlined = false
+text = "active: False
+"
 script = ExtResource( 1 )
+
+[node name="meta" type="RichTextLabel" parent="c/div1/div2/c/c/meta_tabs"]
+visible = false
+anchor_right = 1.0
+anchor_bottom = 1.0
+margin_left = 4.0
+margin_top = 32.0
+margin_right = -4.0
+margin_bottom = -4.0
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme = SubResource( 3 )
+custom_constants/table_hseparation = 16
+custom_fonts/bold_italics_font = ExtResource( 13 )
+custom_fonts/italics_font = ExtResource( 10 )
+custom_fonts/bold_font = ExtResource( 11 )
+custom_fonts/normal_font = ExtResource( 12 )
+bbcode_enabled = true
+script = ExtResource( 9 )
 
 [node name="search" type="VBoxContainer" parent="c/div1/div2/c/c/meta_tabs"]
 visible = false
@@ -251,7 +286,7 @@ margin_right = 58.0
 margin_bottom = 28.0
 size_flags_horizontal = 3
 size_flags_vertical = 3
-theme = SubResource( 2 )
+theme = SubResource( 4 )
 custom_fonts/bold_italics_font = ExtResource( 13 )
 custom_fonts/italics_font = ExtResource( 10 )
 custom_fonts/bold_font = ExtResource( 11 )
@@ -260,7 +295,7 @@ bbcode_enabled = true
 meta_underlined = false
 script = ExtResource( 15 )
 
-[node name="meta" type="RichTextLabel" parent="c/div1/div2/c/c/meta_tabs"]
+[node name="sys" type="VBoxContainer" parent="c/div1/div2/c/c/meta_tabs"]
 visible = false
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -268,28 +303,22 @@ margin_left = 4.0
 margin_top = 32.0
 margin_right = -4.0
 margin_bottom = -4.0
-size_flags_horizontal = 3
-size_flags_vertical = 3
-theme = SubResource( 3 )
-custom_constants/table_hseparation = 16
-custom_fonts/bold_italics_font = ExtResource( 13 )
-custom_fonts/italics_font = ExtResource( 10 )
-custom_fonts/bold_font = ExtResource( 11 )
-custom_fonts/normal_font = ExtResource( 12 )
-bbcode_enabled = true
-script = ExtResource( 9 )
 
-[node name="sys" type="RichTextLabel" parent="c/div1/div2/c/c/meta_tabs"]
-visible = false
+[node name="update" type="Button" parent="c/div1/div2/c/c/meta_tabs/sys"]
+margin_right = 12.0
+margin_bottom = 20.0
+size_flags_horizontal = 3
+custom_fonts/font = ExtResource( 12 )
+text = "⟳"
+
+[node name="sys" type="RichTextLabel" parent="c/div1/div2/c/c/meta_tabs/sys"]
 anchor_right = 1.0
 anchor_bottom = 1.0
-margin_left = 4.0
-margin_top = 32.0
-margin_right = -4.0
-margin_bottom = -4.0
+margin_right = -8.0
+margin_bottom = -36.0
 size_flags_horizontal = 3
 size_flags_vertical = 3
-theme = SubResource( 4 )
+theme = SubResource( 5 )
 custom_constants/table_hseparation = 101
 custom_fonts/bold_italics_font = ExtResource( 13 )
 custom_fonts/italics_font = ExtResource( 10 )
@@ -303,7 +332,7 @@ script = ExtResource( 17 )
 [node name="c2" type="PanelContainer" parent="c/div1/div2"]
 margin_left = 626.0
 margin_right = 806.0
-margin_bottom = 566.0
+margin_bottom = 562.0
 rect_min_size = Vector2( 100, 0 )
 size_flags_vertical = 3
 
@@ -311,12 +340,13 @@ size_flags_vertical = 3
 margin_left = 7.0
 margin_top = 7.0
 margin_right = 173.0
-margin_bottom = 559.0
+margin_bottom = 555.0
 custom_constants/autohide = 0
+split_offset = 180
 
 [node name="c" type="Panel" parent="c/div1/div2/c2/c"]
 margin_right = 166.0
-margin_bottom = 270.0
+margin_bottom = 448.0
 size_flags_horizontal = 3
 size_flags_vertical = 3
 
@@ -324,7 +354,7 @@ size_flags_vertical = 3
 anchor_right = 1.0
 anchor_bottom = 1.0
 size_flags_vertical = 3
-theme = SubResource( 5 )
+theme = SubResource( 6 )
 custom_fonts/bold_italics_font = ExtResource( 13 )
 custom_fonts/italics_font = ExtResource( 10 )
 custom_fonts/bold_font = ExtResource( 11 )
@@ -339,9 +369,9 @@ __meta__ = {
 }
 
 [node name="c2" type="Panel" parent="c/div1/div2/c2/c"]
-margin_top = 282.0
+margin_top = 460.0
 margin_right = 166.0
-margin_bottom = 552.0
+margin_bottom = 548.0
 size_flags_horizontal = 3
 size_flags_vertical = 3
 
@@ -350,7 +380,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 size_flags_horizontal = 3
 size_flags_vertical = 3
-theme = SubResource( 6 )
+theme = SubResource( 7 )
 custom_fonts/bold_italics_font = ExtResource( 13 )
 custom_fonts/italics_font = ExtResource( 10 )
 custom_fonts/bold_font = ExtResource( 11 )

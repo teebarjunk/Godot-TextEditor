@@ -33,7 +33,6 @@ func _ready():
 	dir_popup.clear()
 	dir_popup.rect_size = Vector2.ZERO
 	dir_popup.add_item("New File")
-	dir_popup.add_item("New Folder")
 	dir_popup.add_separator()
 	dir_popup.add_item("Remove")
 	_e = dir_popup.connect("index_pressed", self, "_dir_popup")
@@ -52,7 +51,6 @@ func _dir_popup(index:int):
 	
 	match dir_popup.get_item_text(index):
 		"New File": editor.popup_create_file(file)
-		"New Folder": editor.popup_create_dir(file)
 		"Remove": editor.recycle(file)
 
 func _file_popup(index:int):

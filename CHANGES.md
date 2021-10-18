@@ -1,3 +1,15 @@
+# 1.5
+- Added `Ctrl + N` to immediately create new file without defining path.
+- New unsaved file will have contents remembered.
+- Added `Ctrl + Shift + Mouse wheel` to change ui font size.
+- Added word wrap toggle.
+- Fixed sorting error in `sys`.
+- Fixed font size save/load.
+- `sys` shows chapter count.
+- Preserves symbol view scroll value when tabbing.
+- Can access full filesystem.
+- Fixed "New File" dialog not gaining focus.
+
 # 1.4
 - Added `sys` info tab.
 - Added `console` info tab. (wip)

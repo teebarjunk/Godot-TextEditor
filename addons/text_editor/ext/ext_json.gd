@@ -34,7 +34,7 @@ func get_symbols(t:String):
 	
 	return out
 
-func apply_colors(e:TE_TextEditor, t:TextEdit):
+func apply_colors(e:TE_Editor, t:TextEdit):
 	.apply_colors(e, t)
 	
 	# vars

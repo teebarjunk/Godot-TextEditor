@@ -1,7 +1,7 @@
 tool
 extends LineEdit
 
-onready var editor:TE_TextEditor = owner
+onready var editor:TE_Editor = owner
 var fr:FuncRef
 
 func _ready():

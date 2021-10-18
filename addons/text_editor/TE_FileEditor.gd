@@ -1,7 +1,7 @@
 tool
 extends TextEdit
 
-var editor:TE_TextEditor
+var editor:TE_Editor
 var _hscroll:HScrollBar
 var _vscroll:VScrollBar
 
@@ -22,6 +22,12 @@ var vscroll:int = 0
 var in_focus:bool = false
 
 func _ready():
+	# prefab?
+	if name == "file_editor":
+		set_process(false)
+		set_process_input(false)
+		return
+		
 	var _e
 	if not editor:
 		editor = owner
@@ -38,6 +44,10 @@ func _ready():
 	
 	add_font_override("font", editor.FONT)
 	get_menu().add_font_override("font", editor.FONT)
+	
+	# hint
+	theme = Theme.new()
+	theme.set_font("font", "TooltipLabel", editor.FONT_R)
 	
 	TE_Util.dig(self, self, "_node")
 
@@ -59,24 +69,31 @@ func _scroll_v(v:VScrollBar):
 func _tab_changed(index:int):
 	var myindex = get_index()
 	if index == myindex and visible:
-		grab_focus()
-		grab_click_focus()
+#		grab_focus()
+#		grab_click_focus()
 		yield(get_tree(), "idle_frame")
 		set_h_scroll(hscroll)
 		set_v_scroll(vscroll)
 
 func get_state() -> Dictionary:
-	return {
-		hscroll=scroll_horizontal,
-		vscroll=scroll_vertical
-	}
-
+	var state = { hscroll=scroll_horizontal, vscroll=scroll_vertical }
+	# unsaved
+	if file_path == "":
+		state.text = text
+	return state
+	
 func set_state(state:Dictionary):
 	yield(get_tree(), "idle_frame")
 	hscroll = state.hscroll
 	vscroll = state.vscroll
 	set_h_scroll(state.hscroll)
 	set_v_scroll(state.vscroll)
+	
+	if "text" in state:
+		if state.text.strip_edges():
+			text = state.text
+		else:
+			editor._close_file(file_path)
 
 func _file_renamed(old_path:String, new_path:String):
 	if old_path == file_path:
@@ -105,29 +122,6 @@ func _input(e):
 				var link = file_path.get_base_dir().plus_file(file)
 				editor.open_file(link)
 				editor.select_file(link)
-#				print(link)
-		
-	if e is InputEventKey and e.pressed and e.control:
-		# tab to next
-		if e.scancode == KEY_TAB:
-			get_tree().set_input_as_handled()
-			if e.shift:
-				get_parent().prev()
-			else:
-				get_parent().next()
-		
-		# save files
-		elif e.scancode == KEY_S:
-			get_tree().set_input_as_handled()
-			editor.save_files()
-		
-		# close file
-		elif e.scancode == KEY_W:
-			get_tree().set_input_as_handled()
-			if e.shift:
-				editor.open_last_file()
-			else:
-				close()
 	
 	# remember last selection
 	if e is InputEventKey and e.pressed:
@@ -184,12 +178,38 @@ func _file_selected(p:String):
 		return
 	
 	if p == file_path:
-		grab_focus()
-		grab_click_focus()
 		update_symbols()
 		update_heading()
+		
+		var cl = cursor_get_line()
+		var cc = cursor_get_column()
+		var fl
+		var fc
+		var tl
+		var tc
+		var had_selection = false
+		
+		if is_selection_active():
+			had_selection = true
+			fl = get_selection_from_line()
+			fc = get_selection_from_column()
+			tl = get_selection_to_line()
+			tc = get_selection_to_column()
+			
+			grab_focus()
+			grab_click_focus()
+		
+		yield(get_tree(), "idle_frame")
+		
+		cursor_set_line(cl)
+		cursor_set_column(cc)
+		
+		if had_selection:
+			select(fl, fc, tl, tc)
+		
 
 func goto_line(line:int):
+	prints("goto ", line)
 	# force scroll to bottom so selected line will be at top
 	cursor_set_line(get_line_count())
 	cursor_set_line(line)
@@ -239,56 +259,80 @@ func update_symbols():
 			else:
 				tags[tag] += 1
 	
-#	var _e = TE_Util.sort(tags, true)
 	editor._file_symbols_updated(file_path)
 
 func close():
 	if modified:
-		var _e
-		_e = editor.popup_unsaved.connect("confirmed", self, "_popup", ["close"], CONNECT_ONESHOT)
-		_e = editor.popup_unsaved.connect("custom_action", self, "_popup", [], CONNECT_ONESHOT)
-		editor.popup_unsaved.show()
+		if not editor.popup_unsaved.visible:
+			var _e
+			_e = editor.popup_unsaved.connect("confirmed", self, "_popup", ["confirm_close"], CONNECT_ONESHOT)
+			_e = editor.popup_unsaved.connect("custom_action", self, "_popup", [], CONNECT_ONESHOT)
+#			_e = editor.popup_unsaved.connect("hide", self, "_popup", ["cancel"], CONNECT_ONESHOT)
+			editor.popup_unsaved.show()
 	else:
 		editor._close_file(file_path)
 
 func _popup(msg):
 	match msg:
-		"close":
+		"confirm_close":
 			editor._close_file(file_path)
 		"save_and_close":
 			save_file()
 			editor._close_file(file_path)
+	editor.popup_unsaved.disconnect("confirmed", self, "_popup")
+	editor.popup_unsaved.disconnect("custom_action", self, "_popup")
 
 func load_file(path:String):
 	file_path = path
-	text = TE_Util.load_text(path)
-	update_name()
+	if path != "":
+		text = TE_Util.load_text(path)
 	update_colors()
+	update_name()
 	
 func update_colors():
 	clear_colors()
 	helper = editor.get_extension_helper(file_path)
 	helper.apply_colors(editor, self)
 
+func _created_nonexisting(fp:String):
+	file_path = fp
+	modified = false
+	update_name()
+	update_symbols()
+
 func save_file():
-	if modified:
-		if not file_path.begins_with(editor.current_directory):
-			var err_msg = "can't save to %s" % file_path
-			push_error(err_msg)
-			editor.console.err(err_msg)
-			return
-		
-		modified = false
-		editor.save_file(file_path, text)
-		update_name()
-		update_symbols()
+	if file_path == "":
+		editor.popup_create_file(editor.current_directory, text, funcref(self, "_created_nonexisting"))
+	
+	else:
+		if modified:
+			if not file_path.begins_with(editor.current_directory):
+				var err_msg = "can't save to %s" % file_path
+				push_error(err_msg)
+				editor.console.err(err_msg)
+				return
+			
+			modified = false
+			editor.save_file(file_path, text)
+			update_name()
+			update_symbols()
 
 func update_name():
-	var n = file_path.get_file().split(".", true, 1)[0]
-	if temporary: n = "?" + n
-	if modified: n = "*" + n
+	var n:String
+	
+	if file_path == "":
+		n = "*UNSAVED"
+	
+	else:
+		n = file_path.get_file().split(".", true, 1)[0]
+		if temporary: n = "?" + n
+		if modified: n = "*" + n
+	
+	if len(n) > 9:
+		n = n.substr(0, 6) + "..."
 	
 	editor.tab_parent.set_tab_title(get_index(), n)
+	editor.tab_parent.get_tab_control(get_index()).hint_tooltip = file_path
 	update_heading()
 
 func update_heading():

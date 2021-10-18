@@ -1,7 +1,7 @@
 tool
 extends TabContainer
 
-onready var editor:TE_TextEditor = owner
+onready var editor:TE_Editor = owner
 
 var mouse_over:bool = false
 

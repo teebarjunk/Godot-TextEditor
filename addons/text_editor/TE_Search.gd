@@ -21,7 +21,7 @@ func _unhandled_key_input(e):
 		line_edit.grab_focus()
 		line_edit.grab_click_focus()
 		get_parent().get_parent().show()
-		get_parent().get_parent().current_tab = get_index()
+		get_parent().get_parent().current_tab = get_parent().get_index()
 		get_tree().set_input_as_handled()
 
 func _clicked(args):

@@ -3,17 +3,15 @@ extends "res://addons/text_editor/TE_RichTextLabel.gd"
 
 var chapter_info:Array = []
 var sort_on:String = "words"
-var sort_reverse:Dictionary = { id=false, words=false, unique=false }
+var sort_reverse:Dictionary = { id=false, words=false, chaps=false }
 
 func _ready():
-	var _e
-	_e = editor.connect("file_opened", self, "_update")
-	_e = editor.connect("file_saved", self, "_update")
+	var btn = get_parent().get_node("update")
+	btn.add_font_override("font", editor.FONT_R)
+	
+	var _e = btn.connect("pressed", self, "_update")
 
-func _update(f):
-	set_process(true)
-
-func _process(_delta):
+func _update():
 	chapter_info.clear()
 	
 	for path in editor.file_paths:
@@ -22,21 +20,30 @@ func _process(_delta):
 		match ext:
 			"md": _process_md(path)
 	
+	# clear empty
+	for i in range(len(chapter_info)-1, -1, -1):
+		var info = chapter_info[i]
+		if not info.words:
+			chapter_info.remove(i)
+	
 	_sort()
 	_redraw()
-	
-	set_process(false)
 
 func _chapter(path:String, line:int, id:String):
-	chapter_info.append({ path=path, line=line, id=id, words=0, chars=0, unique=0 })
-
+	if not id:
+		id = "???"
+	chapter_info.append({ path=path, line=line, id=id, words=0, chaps=0 })
+	
 func _process_md(path:String):
 	var lines = TE_Util.load_text(path).split("\n")
+	var is_entire_file:bool = false
+	
 	_chapter(path, 0, "NOH")
 	var i = 0
 	while i < len(lines):
 		# skip head meta
 		if i == 0 and lines[i].begins_with("---"):
+			is_entire_file = true
 			i += 1
 			while i < len(lines) and not lines[i].begins_with("---"):
 				i += 1
@@ -51,28 +58,19 @@ func _process_md(path:String):
 		# heading
 		elif lines[i].begins_with("#"):
 			var p = lines[i].split(" ", true, 1)
-			var id = lines[i].split(" ", true, 1)[1].strip_edges()
-			_chapter(path, i, id)
+			var id = lines[i].split(" ", true, 1)
+			var deep = len(id[0])
+			id = "???" if len(id) == 1 else id[1].strip_edges()
+			if deep == 1 and not is_entire_file:
+				_chapter(path, i, id)
+			else:
+				chapter_info[-1].chaps += 1
 		
 		else:
 			var words = lines[i].split(" ", false)
-			var unique = []
-			for word in words:
-				var w = clean_word(word.to_lower())
-				if w and not w in unique:
-					unique.append(w)
-			
 			chapter_info[-1].words += len(words)
-			chapter_info[-1].unique += len(unique)
 		
 		i += 1
-
-func clean_word(w:String):
-	var out = ""
-	for c in w:
-		if c in "abcdefghijklmnopqrstuvwxyz":
-			out += c
-	return out
 
 func _clicked(args):
 	match args[0]:
@@ -87,35 +85,41 @@ func _clicked(args):
 			_redraw()
 		
 		"goto":
-			print(args)
 			var tab = editor.open_file(args[1])
 			editor.select_file(args[1])
 			tab.goto_line(args[2])
 
 func _sort():
 	if sort_reverse[sort_on]:
-		chapter_info.sort_custom(self, "_sort_chapters")
-	else:
 		chapter_info.sort_custom(self, "_sort_chapters_r")
+	else:
+		chapter_info.sort_custom(self, "_sort_chapters")
 
-func _sort_chapters(a, b): return a[sort_on] < b[sort_on]
-func _sort_chapters_r(a, b): return a[sort_on] >= b[sort_on]
+func _sort_chapters(a, b):
+	return a[sort_on] < b[sort_on]
+
+func _sort_chapters_r(a, b):
+	return a[sort_on] > b[sort_on]
 
 func _redraw():
 	clear()
 	
 	var c1 = Color.white.darkened(.4)
 	var c2 = Color.white.darkened(.3)
-	
+	var cols = ["id", "words", "chaps"]
 	push_align(RichTextLabel.ALIGN_CENTER)
-	push_table(3)
-	for id in ["id", "words", "unique"]:
+	push_table(len(cols))
+	for id in cols:
 		push_cell()
 		push_bold()
 		push_meta(add_meta(["sort_table", id], "sort on %s" % id))
 		add_text(id)
 		if sort_on == id:
-			push_color(Color.white.darkened(.5))
+			push_color(Color.greenyellow.darkened(.25))
+			add_text(" ⯅" if sort_reverse[id] else " ⯆")
+			pop()
+		else:
+			push_color(Color.white.darkened(.7))
 			add_text(" ⯅" if sort_reverse[id] else " ⯆")
 			pop()
 		pop()
@@ -124,10 +128,6 @@ func _redraw():
 	
 	for i in len(chapter_info):
 		var item = chapter_info[i]
-		
-		if item.id == "NOH" and not item.words:
-			continue
-		
 		var clr = c1 if i%2==0 else c2
 		
 		# id
@@ -140,10 +140,10 @@ func _redraw():
 		pop()
 		
 		# word cound
-		for w in ["words", "unique"]:
+		for x in ["words", "chaps"]:
 			push_cell()
 			push_color(clr)
-			add_text(TE_Util.commas(item[w]))
+			add_text(TE_Util.commas(item[x]))
 			pop()
 			pop()
 	

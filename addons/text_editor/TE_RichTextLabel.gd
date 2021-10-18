@@ -1,6 +1,6 @@
 extends RichTextLabel
 
-onready var editor:TE_TextEditor = owner
+onready var editor:TE_Editor = owner
 
 var meta_items:Array = []
 var meta_hovered:Array = []

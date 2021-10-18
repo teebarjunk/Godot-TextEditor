@@ -1,6 +1,6 @@
 tool
 extends Control
-class_name TE_TextEditor
+class_name TE_Editor
 
 const FONT:DynamicFont = preload("res://addons/text_editor/fonts/font.tres")
 
@@ -75,6 +75,7 @@ onready var file_dialog:FileDialog = $file_dialog
 onready var line_edit:LineEdit = $c/div1/div2/c/line_edit
 onready var menu_file:MenuButton = $c/c/c/file_button
 onready var menu_view:MenuButton = $c/c/c/view_button
+onready var word_wrap:CheckBox = $c/c/c/word_wrap
 onready var console:RichTextLabel = $c/div1/div2/c/c/meta_tabs/console
 var popup_file:PopupMenu
 var popup_view:PopupMenu
@@ -103,6 +104,7 @@ func _ready():
 	
 	if OS.has_feature("standalone"):
 		current_directory = OS.get_executable_path().get_base_dir()
+		file_dialog.access = FileDialog.ACCESS_FILESYSTEM
 	
 	console.info("current dir: %s" % current_directory)
 	# not needed when editor plugin
@@ -126,10 +128,9 @@ func _ready():
 	popup_file.clear()
 	popup_file.add_font_override("font", FONT_R)
 	popup_file.add_item("New File", 100)
-	popup_file.add_item("New Folder", 200)
 	popup_file.add_separator()
 	popup_file.add_item("Open last closed", 300)
-	_e = popup_file.connect("id_pressed", self, "_menu_file")
+	_e = popup_file.connect("index_pressed", self, "_menu_file")
 	
 	# view
 	menu_view.add_font_override("font", FONT_R)
@@ -188,9 +189,18 @@ func _ready():
 	# tab control
 	_e = tab_parent.connect("tab_changed", self, "_tab_changed")
 	
+	# word wrap
+	_e = word_wrap.connect("pressed", self, "_toggle_word_wrap")
+	word_wrap.add_font_override("font", FONT_R)
+	
 	load_state()
 	update_checks()
 	set_directory()
+
+func _toggle_word_wrap():
+	tab_prefab.set_wrap_enabled(word_wrap.pressed)
+	for tab in get_all_tabs():
+		tab.set_wrap_enabled(word_wrap.pressed)
 
 func update_checks():
 	# Directories
@@ -217,6 +227,7 @@ func save_state():
 	var state:Dictionary = {
 		"save_version": "1",
 		"font_size": FONT.size,
+		"font_size_ui": FONT_R.size,
 		"tabs": {},
 		"selected": get_selected_file(),
 		"show": show,
@@ -228,8 +239,13 @@ func save_state():
 		"file_list": file_list,
 		
 		"div1": $c/div1.split_offset,
-		"div2": $c/div1/div2.split_offset
+		"div2": $c/div1/div2.split_offset,
+		"div3": $c/div1/div2/c/c.split_offset,
+		"div4": $c/div1/div2/c2/c.split_offset
 	}
+	var ws = OS.get_window_size()
+	state["window_size"] = [ws.x, ws.y]
+	
 	for tab in get_all_tabs():
 		state.tabs[tab.file_path] = tab.get_state()
 	
@@ -252,13 +268,27 @@ func load_state():
 	
 	update_checks()
 	
+	FONT.size = state.get("font_size", FONT.size)
+	
+	var font_size_ui = state.get("font_size_ui", FONT_R.size)
+	for f in [FONT_R, FONT_B, FONT_I, FONT_BI]:
+		f.size = font_size_ui
+	
 	_load_property(state, "file_list")
 	_load_property(state, "tag_counts")
 	_load_property(state, "tags_enabled")
 	_load_property(state, "exts_enabled")
 	
+	# dividers
 	$c/div1.split_offset = state.get("div1", $c/div1.split_offset)
 	$c/div1/div2.split_offset = state.get("div2", $c/div1/div2.split_offset)
+	$c/div1/div2/c/c.split_offset = state.get("div3", $c/div1/div2/c/c.split_offset)
+	$c/div1/div2/c2/c.split_offset = state.get("div4", $c/div1/div2/c2/c.split_offset)
+	
+	# window size
+	if "window_size" in state:
+		var ws = state.window_size
+		OS.set_window_size(Vector2(ws[0], ws[1]))
 	
 	emit_signal("state_loaded")
 	
@@ -295,25 +325,67 @@ func _input(e):
 	if not is_plugin_active():
 		return
 	
-	if e is InputEventMouseButton and e.control:
-		if e.button_index == BUTTON_WHEEL_DOWN:
-			FONT.size = int(max(8, FONT.size - 1))
+	if e is InputEventKey and e.pressed and e.control:
+		# tab to next
+		if e.scancode == KEY_TAB:
+			if e.shift:
+				tab_parent.prev()
+			else:
+				tab_parent.next()
 			get_tree().set_input_as_handled()
 		
-		elif e.button_index == BUTTON_WHEEL_UP:
-			FONT.size = int(min(64, FONT.size + 1))
+		# save files
+		elif e.scancode == KEY_S:
+			save_files()
 			get_tree().set_input_as_handled()
+		
+		# close file
+		elif e.scancode == KEY_W:
+			if e.shift:
+				open_last_file()
+			else:
+				get_selected_tab().close()
+			get_tree().set_input_as_handled()
+		
+		# create new file
+		elif e.scancode == KEY_N:
+			open_file("", true)
+			get_tree().set_input_as_handled()
+	
+	if e is InputEventMouseButton and e.control:
+		
+		# ui font
+		if e.shift:
+			if e.button_index == BUTTON_WHEEL_DOWN:
+				for f in [FONT_B, FONT_BI, FONT_R, FONT_I]:
+					f.size = int(max(8, f.size - 1))
+				get_tree().set_input_as_handled()
+			
+			elif e.button_index == BUTTON_WHEEL_UP:
+				for f in [FONT_B, FONT_BI, FONT_R, FONT_I]:
+					f.size = int(min(64, f.size + 1))
+				get_tree().set_input_as_handled()
+		
+		# text font
+		else:
+			if e.button_index == BUTTON_WHEEL_DOWN:
+				FONT.size = int(max(8, FONT.size - 1))
+				get_tree().set_input_as_handled()
+			
+			elif e.button_index == BUTTON_WHEEL_UP:
+				FONT.size = int(min(64, FONT.size + 1))
+				get_tree().set_input_as_handled()
 
 func _apply_fonts(n:Node):
 	if n is Control:
 		if n.has_font("font"):
 			n.add_font_override("font", FONT_R)
 
-func _menu_file(id):
-	match id:
-		100: popup_create_file() # "New File"
-		200: popup_create_dir() # "New Folder"
-		300: open_last_file() # "Open last closed"
+func _menu_file(index:int):
+	var text = popup_file.get_item_text(index)
+	match text:
+		"New File": popup_create_file() # "New File"
+		"Open last closed": open_last_file() # "Open last closed"
 
 func _menu_view_dir(index:int):
 	var text = popup_view_dir.get_item_text(index)
@@ -365,8 +437,12 @@ func _menu_view_file(index:int):
 
 func _file_dialog_file(file_path:String):
 	match file_dialog.get_meta("mode"):
-		"create_file": create_file(file_path)
-		"create_dir": create_dir(file_path)
+		"create_file":
+			var text = file_dialog.get_meta("text")
+			create_file(file_path, text)
+		
+		"create_dir":
+			create_dir(file_path)
 
 var tab_index:int = -1
 func _tab_changed(index:int):
@@ -411,35 +487,40 @@ func is_tagged(file_path:String) -> bool:
 func is_tagging() -> bool:
 	return len(tags) > 0
 
-func popup_create_file(dir:String=current_directory):
+func popup_create_file(dir:String=current_directory, text:String="", callback:FuncRef=null):
 	file_dialog.mode = FileDialog.MODE_SAVE_FILE
 	file_dialog.current_dir = dir
 	file_dialog.window_title = "Create File"
-	file_dialog.current_path = "new_file.txt"
+	file_dialog.current_path = "new_file.md"
 	file_dialog.filters = FILE_FILTERS
 	file_dialog.set_meta("mode", "create_file")
+	file_dialog.set_meta("text", text)
+	file_dialog.set_meta("callback", callback)
 	file_dialog.show()
+	yield(get_tree(), "idle_frame")
+	file_dialog.get_line_edit().grab_click_focus()
+	file_dialog.get_line_edit().grab_focus()
 
-func popup_create_dir(dir:String=current_directory):
-	file_dialog.mode = FileDialog.MODE_OPEN_DIR
-	file_dialog.current_dir = dir
-	file_dialog.window_title = "Create Folder"
-	file_dialog.current_path = "New Folder"
-	file_dialog.set_meta("mode", "create_dir")
-	file_dialog.show()
-
-func create_file(file_path:String):
+func create_file(file_path:String, text:String=""):
 	var f:File = File.new()
 	if f.open(file_path, File.WRITE) == OK:
-		f.store_string("")
+		f.store_string(text)
 		f.close()
 		refresh_files()
+		
+		if file_dialog.has_meta("callback"):
+			var fr:FuncRef = file_dialog.get_meta("callback")
+			fr.call_func(file_path)
+			file_dialog.set_meta("callback", null)
+		
 		open_file(file_path)
-		select_file(file_path)
+		
+		return true
 	else:
 		var err_msg = "couldnt create %s" % file_path
 		console.err(err_msg)
 		push_error(err_msg)
+		return false
 
 func create_dir(file_path:String):
 	var d:Directory = Directory.new()
@@ -460,7 +541,7 @@ func get_selected_file() -> String:
 
 func get_tab(file_path:String) -> TextEdit:
 	for child in tab_parent.get_children():
-		if child.file_path == file_path:
+		if child is TextEdit and child.file_path == file_path:
 			return child
 	return null
 
@@ -502,16 +583,25 @@ func close_file(file_path:String):
 		tab.close()
 
 func _close_file(file_path, remember:bool=true):
-	if remember:
+	if remember and file_path:
 		closed.append(file_path)
 	
-	var tab = get_tab(file_path)
+	var tab:Node = get_tab(file_path)
 	tab_parent.remove_child(tab)
 	tab.queue_free()
-	emit_signal("file_closed", file_path)
+	
+	if file_path:
+		emit_signal("file_closed", file_path)
+	
+	# force select a file
+	yield(get_tree(), "idle_frame")
+	var fp = get_selected_file()
+	if fp:
+		select_file(fp)
 
 func _open_file(file_path:String):
 	var tab = tab_prefab.duplicate()
+	tab.name = "tab"
 	tab.visible = true
 	tab.editor = self
 	tab_parent.add_child(tab)
@@ -528,11 +618,11 @@ func open_file(file_path:String, temporary:bool=false):
 	if tab:
 		return tab
 	
-	elif not File.new().file_exists(file_path):
+	elif not File.new().file_exists(file_path) and not file_path == "":
 		push_error("no file %s" % file_path)
 		return null
 	
-	elif not is_allowed_extension(file_path):
+	elif not is_allowed_extension(file_path) and not file_path == "":
 		push_error("can't open %s" % file_path)
 		return null
 	
@@ -542,6 +632,10 @@ func open_file(file_path:String, temporary:bool=false):
 			tab.temporary = true
 		else:
 			opened.append(file_path)
+		
+		# select it
+		tab_parent.current_tab = tab.get_index()
+		
 		emit_signal("file_opened", file_path)
 		return tab
 
@@ -564,11 +658,15 @@ func unrecycle(file_path:String):
 		d.remove(file_path)
 		refresh_files()
 	else:
-		print("can't unrecyle")
-	
+		var err_msg = "can't unrecyle %s" % file_path
+		push_error(err_msg)
+		console.err(err_msg)
+
 func recycle(file_path:String):
 	if file_path.begins_with(PATH_TRASH):
-		push_error("can't recycle recycled.")
+		var err_msg = "can't recycle recycled %s" % file_path
+		push_error(err_msg)
+		console.err(err_msg)
 		return
 	
 	var tab = get_tab(file_path)
@@ -640,10 +738,6 @@ func select_file(file_path:String):
 	_selected_file_changed(file_path)
 
 func set_directory(path:String=current_directory):
-#	var gpath = ProjectSettings.globalize_path(path)
-#	var dname = gpath.get_file()
-	console.msg("Set " + path)
-	
 	current_directory = path
 	file_dialog.current_dir = path
 	refresh_files()
@@ -722,7 +816,6 @@ func _scan_dir(id:String, path:String, dir:Directory, last_dir:Dictionary, old_l
 	
 	while fname:
 		var file_path = dir.get_current_dir().plus_file(fname)
-		console.msg(file_path)
 		
 		if dir.current_is_dir():
 			if show_dir(fname, file_path):
@@ -779,9 +872,8 @@ static func get_extension(file_path:String) -> String:
 func get_extension_helper(file_path:String) -> TE_ExtensionHelper:
 	var ext:String = get_extension(file_path).replace(".", "_")
 	var ext_path:String = "res://addons/text_editor/ext/ext_%s.gd" % ext
-	var script = load(ext_path)
-	if script:
-		return script.new()
+	if ext in ["cfg", "csv", "ini", "json", "md", "yaml"]:
+		return load(ext_path).new()
 	
 	console.err("no helper %s" % ext_path)
 	return load("res://addons/text_editor/ext/TE_ExtensionHelper.gd").new()

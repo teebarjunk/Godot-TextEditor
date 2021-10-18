@@ -18,7 +18,7 @@ func apply_colors(e:TE_TextEditor, t:TextEdit):
 	t.add_color_region("*", "*", Color.tomato.lightened(.3), false)
 	
 	# quote
-	t.add_color_region("> ", "", e.color_text.darkened(.6), true)
+	t.add_color_region("> ", "", lerp(e.color_text, e.color_symbol, .5), true)
 	
 	# comment
 	t.add_color_region("<!--", "-->", e.color_comment, false)
@@ -66,11 +66,23 @@ func get_symbols(t:String) -> Dictionary:
 	var i = 0
 	
 	while i < len(lines):
+		# initial meta data
+		if i == 0 and lines[i].begins_with("---"):
+			i += 1
+			while i < len(lines) and not lines[i].begins_with("---"):
+				if "tags: " in lines[i]:
+					for tag in lines[i].split("tags: ", true, 1)[1].split("#"):
+						tag = tag.strip_edges()
+						if tag:
+							last.tags.append(tag)
+				i += 1
+			i += 1
+		
 		# symbols
-		if lines[i].begins_with("#"):
+		elif lines[i].begins_with("#"):
 			var p = lines[i].split(" ", true, 1)
 			var deep = len(p[0])-1
-			var name = p[1].strip_edges()
+			var name = "???" if len(p) == 1 else p[1].strip_edges()
 			last = add_symbol(i, deep, name)
 		
 		# tags

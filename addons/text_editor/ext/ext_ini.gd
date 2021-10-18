@@ -1,7 +1,7 @@
 tool
 extends TE_ExtensionHelper
 
-func apply_colors(e:TE_TextEditor, t:TextEdit):
+func apply_colors(e:TE_Editor, t:TextEdit):
 	.apply_colors(e, t)
 	# symbols
 	t.add_color_region("[", "]", e.color_symbol, false)
@@ -27,6 +27,7 @@ func get_symbols(t:String) -> Dictionary:
 		# tags
 		elif lines[i].begins_with(";") and "#" in lines[i]:
 			for t in lines[i].substr(1).split("#"):
+				t = t.strip_edges()
 				if t:
 					last.tags.append(t)
 		
