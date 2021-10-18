@@ -1,12 +1,8 @@
 tool
-extends RichTextLabel
-
-onready var editor:TextEditor = owner
+extends "res://addons/text_editor/TE_RichTextLabel.gd"
 
 func _ready():
 	var _e
-	_e = connect("meta_hover_started", self, "_hovered")
-	_e = connect("meta_clicked", self, "_clicked")
 	_e = editor.connect("symbols_updated", self, "_redraw")
 	_e = editor.connect("tags_updated", self, "_redraw")
 	
@@ -17,21 +13,23 @@ func _ready():
 	
 	call_deferred("_redraw")
 
-func _hovered(_id):
-	pass
-
-func _clicked(id):
-	var p = id.split(":", true, 1)
-	var i = int(p[1])
-	match p[0]:
-		"l":
-			var te:TextEdit = editor.get_selected_tab()
-			te.cursor_set_line(te.get_line_count()) # force scroll to bottom so selected line will be at top
-			te.cursor_set_line(i)
+func _clicked(args:Array):
+	var te:TextEdit = editor.get_selected_tab()
+	te.goto_line(args[1])
 
 func _redraw():
 	var tab = editor.get_selected_tab()
 	var symbols = {} if not tab else tab.symbols
+	var spaces = PoolStringArray([
+		"- ",
+		"  - ",
+		"    - "
+	])
+	var colors = PoolColorArray([
+		Color.white,
+		Color.white.darkened(.25),
+		Color.white.darkened(.5)
+	])
 	
 	# no symbols
 	if not symbols or len(symbols) == 1:
@@ -44,9 +42,17 @@ func _redraw():
 			if line_index == -1:
 				continue # special file chapter
 			var symbol_info = symbols[line_index]
-			var space = "" if not symbol_info.deep else "  ".repeat(symbol_info.deep)
-			var tagged = editor.is_tagged_or_visible(symbol_info.tags)
-			var clr = Color.white.darkened(0.0 if tagged else 0.75).to_html()
-			t.append(space + "[color=#%s][url=l:%s]%s[/url][/color]" % [clr, line_index, symbol_info.name])
+			var deep = symbol_info.deep
+			var space = "" if not deep else clr("-".repeat(deep), Color.white.darkened(.75))
+			var cl = Color.deepskyblue if deep == 0 else Color.white
+			
+			if not editor.is_tagged_or_visible(symbol_info.tags):
+				cl = cl.darkened(.7)
+			
+			elif deep >= 1:
+				cl = cl.darkened(.33 * (deep-1))
+			
+			var tags = "" if not symbol_info.tags else PoolStringArray(symbol_info.tags).join(", ")
+			t.append(clr(meta(space + symbol_info.name, [symbol_info, line_index], tags), cl))
 		
 		set_bbcode(t.join("\n"))

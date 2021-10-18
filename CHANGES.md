@@ -1,3 +1,16 @@
+# 1.4
+- Added `sys` info tab.
+- Added `console` info tab. (wip)
+- Changing extension updates colors.
+- Fixed exported build not styling things properly.
+- Fixed symbols/tags not showing when first booting editor.
+- Tweaked colors.
+- Internal rewriting.
+
+# 1.3
+- Basic search implemented. `Ctrl + F`
+- Can create links inside `()` which makes markdown links clickable.: `Ctrl + Click`
+
 # 1.2
 - Can unrecycle now. (Make sure `view/Directories/.trash` is toggled, then press arrow.
 - Added folder recycle option
@@ -7,6 +20,7 @@
 - Settings are saved more frequently.
 - Fixed file dragging.
 - Fixed meta table not resizing.
+- Tweaked symbol colorizer to emphasize depth.
 - Bug fixes.
 
 # 1.1

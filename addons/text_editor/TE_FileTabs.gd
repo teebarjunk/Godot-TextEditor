@@ -1,12 +1,17 @@
 extends TabContainer
 
-onready var editor:TextEditor = owner
+onready var editor:TE_TextEditor = owner
 var mouse:bool = false
 
 func _ready():
+	if not editor.is_plugin_active():
+		return
+	
 	var _e
 	_e = connect("mouse_entered", self, "set", ["mouse", true])
 	_e = connect("mouse_exited", self, "set", ["mouse", false])
+	
+	add_font_override("font", editor.FONT_R)
 
 func _input(e):
 	if not editor.is_plugin_active():

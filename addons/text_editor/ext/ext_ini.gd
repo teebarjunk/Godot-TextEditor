@@ -1,7 +1,7 @@
 tool
 extends TE_ExtensionHelper
 
-func apply_colors(e:TextEditor, t:TextEdit):
+func apply_colors(e:TE_TextEditor, t:TextEdit):
 	.apply_colors(e, t)
 	# symbols
 	t.add_color_region("[", "]", e.color_symbol, false)

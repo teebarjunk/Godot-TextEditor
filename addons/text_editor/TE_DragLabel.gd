@@ -1,7 +1,7 @@
 tool
 extends RichTextLabel
 
-var editor:TextEditor
+var editor:TE_TextEditor
 var click_pos:Vector2
 
 func _init(text):

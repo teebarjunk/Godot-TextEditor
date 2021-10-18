@@ -1,7 +1,7 @@
 tool
 extends TextEdit
 
-var editor:TextEditor
+var editor:TE_TextEditor
 var _hscroll:HScrollBar
 var _vscroll:VScrollBar
 
@@ -82,6 +82,7 @@ func _file_renamed(old_path:String, new_path:String):
 	if old_path == file_path:
 		file_path = new_path
 		update_name()
+		update_colors()
 
 func _input(e):
 	if not editor.is_plugin_active():
@@ -90,6 +91,22 @@ func _input(e):
 	if not visible or not in_focus:
 		return
 	
+	if e is InputEventMouseButton and not e.pressed and e.control:
+		var line:String = get_line(cursor_get_line())
+		var ca = line.find("(")
+		var cb = line.find_last(")")
+		if ca != -1 and cb != -1:
+			var a:int = cursor_get_column()
+			var b:int = cursor_get_column()
+			if ca < a and cb >= b:
+				while a > 0 and not line[a] in "(": a -= 1
+				while b <= len(line) and not line[b] in ")": b += 1
+				var file = line.substr(a+1, b-a-1)
+				var link = file_path.get_base_dir().plus_file(file)
+				editor.open_file(link)
+				editor.select_file(link)
+#				print(link)
+		
 	if e is InputEventKey and e.pressed and e.control:
 		# tab to next
 		if e.scancode == KEY_TAB:
@@ -172,6 +189,11 @@ func _file_selected(p:String):
 		update_symbols()
 		update_heading()
 
+func goto_line(line:int):
+	# force scroll to bottom so selected line will be at top
+	cursor_set_line(get_line_count())
+	cursor_set_line(line)
+
 func text_changed():
 	if last_selected:
 		match last_key:
@@ -241,17 +263,19 @@ func load_file(path:String):
 	file_path = path
 	text = TE_Util.load_text(path)
 	update_name()
+	update_colors()
 	
-	# update colors
+func update_colors():
 	clear_colors()
-	
-	helper = TextEditor.get_extension_helper(file_path)
+	helper = editor.get_extension_helper(file_path)
 	helper.apply_colors(editor, self)
 
 func save_file():
 	if modified:
-		if not file_path.begins_with("res://"):
-			push_error("can't save to %s" % file_path)
+		if not file_path.begins_with(editor.current_directory):
+			var err_msg = "can't save to %s" % file_path
+			push_error(err_msg)
+			editor.console.err(err_msg)
 			return
 		
 		modified = false

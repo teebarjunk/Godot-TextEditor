@@ -4,12 +4,12 @@ class_name TE_ExtensionHelper
 
 var symbols:Dictionary = {}
 
-func generate_meta(t:TextEdit, r:TE_RichTextLabel):
+func generate_meta(t:TextEdit, r:RichTextLabel):
 	var chars = TE_Util.commas(len(t.text))
 	var words = TE_Util.commas(len(t.text.split(" ", false)))
 	var lines = TE_Util.commas(len(TE_Util.split_many(t.text, ".?!\n", false)))
 	var bytes = TE_Util.file_size(t.file_path)
-	r.add_constant_override("table_hseparation", int(r.rect_size.x / 5.0))
+#	r.add_constant_override("table_hseparation", int(r.rect_size.x / 5.0))
 	r.set_bbcode(r.table([
 		["chars", "words", "lines", "bytes"],
 		[chars, words, lines, bytes]

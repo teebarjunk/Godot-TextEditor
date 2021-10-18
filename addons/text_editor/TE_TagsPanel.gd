@@ -1,15 +1,8 @@
 tool
-extends RichTextLabel
-
-onready var editor:TextEditor = owner
-
-var tag_indices:Array = [] # safer to use int in [url=] than str.
+extends "res://addons/text_editor/TE_RichTextLabel.gd"
 
 func _ready():
 	var _e
-	_e = connect("meta_hover_started", self, "_hovered")
-	_e = connect("meta_hover_ended", self, "_unhover")
-	_e = connect("meta_clicked", self, "_clicked")
 	_e = editor.connect("symbols_updated", self, "_redraw")
 	_e = editor.connect("tags_updated", self, "_redraw")
 	
@@ -23,17 +16,17 @@ func _ready():
 	theme.set_font("font", "TooltipLabel", editor.FONT_R)
 	
 	call_deferred("_redraw")
+#
+#func _hovered(index):
+#	var tag = tag_indices[int(index)]
+#	var count = editor.tag_counts[tag]
+#	hint_tooltip = 
 
-func _hovered(index):
-	var tag = tag_indices[int(index)]
-	var count = editor.tag_counts[tag]
-	hint_tooltip = "%s x%s" % [tag, count]
+#func _unhover(t):
+#	hint_tooltip = ""
 
-func _unhover(t):
-	hint_tooltip = ""
-
-func _clicked(id):
-	var tag = tag_indices[int(id)]
+func _clicked(args:Array):
+	var tag = args[0]
 	editor.enable_tag(tag, not editor.is_tag_enabled(tag))
 
 func sort_tags(tags:Dictionary):
@@ -70,26 +63,19 @@ func _redraw():
 			var enabled = editor.is_tag_enabled(tag)
 			
 			var x = tag
-#			if count > 1:
-#				x = "[color=#%s][i]%s[/i][/color]%s" % [count_color1 if enabled else count_color2, count, tag]
-#			else:
-#				x = tag
-			
 			var color = editor.color_text
 			var dim = 0.75
 			
 			if tag in tab_tags:
-				color = editor.color_symbol
-				x = "[b]%s[/b]" % x
+				color = editor.color_tag
+				x = b(x)
 				dim = 0.6
 				
 			if enabled:
 				x = x
 			else:
-				x = "[color=#%s]%s[/color]" % [color.darkened(dim).to_html(), x]
+				x = clr(x, color.darkened(dim))
 			
-			x = "[url=%s]%s[/url]" % [len(tag_indices), x]
-			t.append(x)
-			tag_indices.append(tag)
+			t.append(meta(x, [tag], "%s x%s" % [tag, count] ))
 		
 		set_bbcode("[center]" + t.join(" "))

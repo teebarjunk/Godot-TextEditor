@@ -1,5 +1,6 @@
-[gd_scene load_steps=16 format=2]
+[gd_scene load_steps=24 format=2]
 
+[ext_resource path="res://addons/text_editor/TE_Console.gd" type="Script" id=1]
 [ext_resource path="res://addons/text_editor/TE_TextEditor.gd" type="Script" id=2]
 [ext_resource path="res://addons/text_editor/TE_FilesList.gd" type="Script" id=3]
 [ext_resource path="res://addons/text_editor/TE_FileEditor.gd" type="Script" id=4]
@@ -13,11 +14,26 @@
 [ext_resource path="res://addons/text_editor/fonts/font_r.tres" type="DynamicFont" id=12]
 [ext_resource path="res://addons/text_editor/fonts/font_bi.tres" type="DynamicFont" id=13]
 [ext_resource path="res://addons/text_editor/fonts/font.tres" type="DynamicFont" id=14]
+[ext_resource path="res://addons/text_editor/TE_Search.gd" type="Script" id=15]
+[ext_resource path="res://addons/text_editor/TE_MetaTabs.gd" type="Script" id=16]
+[ext_resource path="res://addons/text_editor/TE_ScriptInfo.gd" type="Script" id=17]
 
 [sub_resource type="Theme" id=1]
 TooltipLabel/fonts/font = ExtResource( 12 )
 
 [sub_resource type="Theme" id=2]
+TooltipLabel/fonts/font = ExtResource( 12 )
+
+[sub_resource type="Theme" id=3]
+TooltipLabel/fonts/font = ExtResource( 12 )
+
+[sub_resource type="Theme" id=4]
+TooltipLabel/fonts/font = ExtResource( 12 )
+
+[sub_resource type="Theme" id=5]
+TooltipLabel/fonts/font = ExtResource( 12 )
+
+[sub_resource type="Theme" id=6]
 TooltipLabel/fonts/font = ExtResource( 12 )
 
 [node name="text_editor" type="Control"]
@@ -146,7 +162,7 @@ items = [ "Rename", null, 0, false, false, 0, 0, null, "", false, "", null, 0, f
 margin_right = 20.0
 margin_bottom = 20.0
 custom_fonts/font = ExtResource( 14 )
-items = [ "New File", null, 0, false, false, 0, 0, null, "", false, "New Folder", null, 0, false, false, 1, 0, null, "", false ]
+items = [ "New File", null, 0, false, false, 0, 0, null, "", false, "New Folder", null, 0, false, false, 1, 0, null, "", false, "", null, 0, false, false, -1, 0, null, "", true, "Remove", null, 0, false, false, 3, 0, null, "", false ]
 
 [node name="div2" type="HSplitContainer" parent="c/div1"]
 margin_left = 218.0
@@ -168,13 +184,20 @@ size_flags_vertical = 3
 [node name="line_edit" type="LineEdit" parent="c/div1/div2/c"]
 visible = false
 margin_right = 614.0
-margin_bottom = 24.0
+margin_bottom = 32.0
 custom_fonts/font = ExtResource( 12 )
 script = ExtResource( 8 )
 
-[node name="tab_container" type="TabContainer" parent="c/div1/div2/c"]
+[node name="c" type="VSplitContainer" parent="c/div1/div2/c"]
 margin_right = 614.0
-margin_bottom = 539.0
+margin_bottom = 566.0
+size_flags_horizontal = 3
+size_flags_vertical = 3
+split_offset = -200
+
+[node name="tab_container" type="TabContainer" parent="c/div1/div2/c/c"]
+margin_right = 614.0
+margin_bottom = 566.0
 size_flags_horizontal = 3
 size_flags_vertical = 3
 custom_fonts/font = ExtResource( 12 )
@@ -185,17 +208,97 @@ __meta__ = {
 "_edit_use_anchors_": false
 }
 
-[node name="meta" type="RichTextLabel" parent="c/div1/div2/c"]
-margin_top = 543.0
+[node name="meta_tabs" type="TabContainer" parent="c/div1/div2/c/c"]
+visible = false
+margin_top = 288.0
 margin_right = 614.0
 margin_bottom = 566.0
+script = ExtResource( 16 )
+
+[node name="console" type="RichTextLabel" parent="c/div1/div2/c/c/meta_tabs"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+margin_left = 4.0
+margin_top = 32.0
+margin_right = -4.0
+margin_bottom = -4.0
+size_flags_horizontal = 3
+size_flags_vertical = 3
+bbcode_enabled = true
+meta_underlined = false
+script = ExtResource( 1 )
+
+[node name="search" type="VBoxContainer" parent="c/div1/div2/c/c/meta_tabs"]
+visible = false
+anchor_right = 1.0
+anchor_bottom = 1.0
+margin_left = 4.0
+margin_top = 32.0
+margin_right = -4.0
+margin_bottom = -4.0
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="le" type="LineEdit" parent="c/div1/div2/c/c/meta_tabs/search"]
+margin_right = 58.0
+margin_bottom = 24.0
+size_flags_horizontal = 3
+custom_fonts/font = ExtResource( 12 )
+
+[node name="rte" type="RichTextLabel" parent="c/div1/div2/c/c/meta_tabs/search"]
+margin_top = 28.0
+margin_right = 58.0
+margin_bottom = 28.0
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme = SubResource( 2 )
 custom_fonts/bold_italics_font = ExtResource( 13 )
 custom_fonts/italics_font = ExtResource( 10 )
 custom_fonts/bold_font = ExtResource( 11 )
 custom_fonts/normal_font = ExtResource( 12 )
 bbcode_enabled = true
-fit_content_height = true
+meta_underlined = false
+script = ExtResource( 15 )
+
+[node name="meta" type="RichTextLabel" parent="c/div1/div2/c/c/meta_tabs"]
+visible = false
+anchor_right = 1.0
+anchor_bottom = 1.0
+margin_left = 4.0
+margin_top = 32.0
+margin_right = -4.0
+margin_bottom = -4.0
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme = SubResource( 3 )
+custom_constants/table_hseparation = 16
+custom_fonts/bold_italics_font = ExtResource( 13 )
+custom_fonts/italics_font = ExtResource( 10 )
+custom_fonts/bold_font = ExtResource( 11 )
+custom_fonts/normal_font = ExtResource( 12 )
+bbcode_enabled = true
 script = ExtResource( 9 )
+
+[node name="sys" type="RichTextLabel" parent="c/div1/div2/c/c/meta_tabs"]
+visible = false
+anchor_right = 1.0
+anchor_bottom = 1.0
+margin_left = 4.0
+margin_top = 32.0
+margin_right = -4.0
+margin_bottom = -4.0
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme = SubResource( 4 )
+custom_constants/table_hseparation = 101
+custom_fonts/bold_italics_font = ExtResource( 13 )
+custom_fonts/italics_font = ExtResource( 10 )
+custom_fonts/bold_font = ExtResource( 11 )
+custom_fonts/normal_font = ExtResource( 12 )
+bbcode_enabled = true
+meta_underlined = false
+text = "idwords ⯆unique"
+script = ExtResource( 17 )
 
 [node name="c2" type="PanelContainer" parent="c/div1/div2"]
 margin_left = 626.0
@@ -221,6 +324,7 @@ size_flags_vertical = 3
 anchor_right = 1.0
 anchor_bottom = 1.0
 size_flags_vertical = 3
+theme = SubResource( 5 )
 custom_fonts/bold_italics_font = ExtResource( 13 )
 custom_fonts/italics_font = ExtResource( 10 )
 custom_fonts/bold_font = ExtResource( 11 )
@@ -246,7 +350,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 size_flags_horizontal = 3
 size_flags_vertical = 3
-theme = SubResource( 2 )
+theme = SubResource( 6 )
 custom_fonts/bold_italics_font = ExtResource( 13 )
 custom_fonts/italics_font = ExtResource( 10 )
 custom_fonts/bold_font = ExtResource( 11 )

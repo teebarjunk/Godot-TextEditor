@@ -4,7 +4,7 @@ extends TE_ExtensionHelper
 func toggle_comment(t:TextEdit, head:String="<!-- ", tail:String=" -->"):
 	return .toggle_comment(t, head, tail)
 
-func apply_colors(e:TextEditor, t:TextEdit):
+func apply_colors(e:TE_TextEditor, t:TextEdit):
 	.apply_colors(e, t)
 	
 	t.add_keyword_color("true", e.color_var)
@@ -32,15 +32,9 @@ func apply_colors(e:TextEditor, t:TextEdit):
 		t.add_color_region("%s *" % h, "*", tint1, true)
 		t.add_color_region("%s \"" % h, "\"", tint2, true)
 		t.add_color_region("%s " % h, "*", head, true)
-#	t.add_color_region("# \"", "\"", TE_Util.hue_shift(head, .33), true)
-#	t.add_color_region("# ", "", head, true)
-#	t.add_color_region("## ", "", head, true)
-#	t.add_color_region("### ", "", head, true)
-#	t.add_color_region("#### ", "", head, true)
-#	t.add_color_region("##### ", "", head, true)
-#	t.add_color_region("###### ", "", head, true)
 	
 	# url links
+#	t.add_color_region("[]", ")", e.color_var.lightened(.5))
 	t.add_color_region("![", ")", e.color_var.lightened(.5))
 	
 	# lists

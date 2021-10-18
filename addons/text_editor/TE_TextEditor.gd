@@ -1,6 +1,6 @@
 tool
 extends Control
-class_name TextEditor
+class_name TE_TextEditor
 
 const FONT:DynamicFont = preload("res://addons/text_editor/fonts/font.tres")
 
@@ -62,11 +62,12 @@ var show:Dictionary = {
 var color_text:Color = Color.white
 var color_comment:Color = Color.white.darkened(.6)
 var color_symbol:Color = Color.deepskyblue
+var color_tag:Color = Color.yellow
 var color_var:Color = Color.orange
 var color_varname:Color = Color.white.darkened(.25)
 
 onready var test_button:Node = $c/c/c/test
-onready var tab_parent:TabContainer = $c/div1/div2/c/tab_container
+onready var tab_parent:TabContainer = $c/div1/div2/c/c/tab_container
 onready var tab_prefab:Node = $file_editor
 onready var popup:ConfirmationDialog = $popup
 onready var popup_unsaved:ConfirmationDialog = $popup_unsaved
@@ -74,6 +75,7 @@ onready var file_dialog:FileDialog = $file_dialog
 onready var line_edit:LineEdit = $c/div1/div2/c/line_edit
 onready var menu_file:MenuButton = $c/c/c/file_button
 onready var menu_view:MenuButton = $c/c/c/view_button
+onready var console:RichTextLabel = $c/div1/div2/c/c/meta_tabs/console
 var popup_file:PopupMenu
 var popup_view:PopupMenu
 var popup_view_dir:PopupMenu = PopupMenu.new()
@@ -81,6 +83,9 @@ var popup_view_file:PopupMenu = PopupMenu.new()
 
 var current_directory:String = "res://"
 var file_list:Dictionary = {}
+var dir_paths:Array = []
+var file_paths:Array = []
+
 var symbols:Dictionary = {}
 var tags:Array = []
 var tags_enabled:Dictionary = {}
@@ -91,9 +96,15 @@ var opened:Array = []
 var closed:Array = []
 
 func _ready():
+	console.info("active: %s" % is_plugin_active())
+	
 	if not is_plugin_active():
 		return
 	
+	if OS.has_feature("standalone"):
+		current_directory = OS.get_executable_path().get_base_dir()
+	
+	console.info("current dir: %s" % current_directory)
 	# not needed when editor plugin
 #	get_tree().set_auto_accept_quit(false)
 	
@@ -177,9 +188,6 @@ func _ready():
 	# tab control
 	_e = tab_parent.connect("tab_changed", self, "_tab_changed")
 	
-	#
-	tab_parent.add_font_override("font", FONT_R)
-	
 	load_state()
 	update_checks()
 	set_directory()
@@ -200,18 +208,14 @@ func update_checks():
 	#
 	for i in len(MAIN_EXTENSIONS):
 		var ext = MAIN_EXTENSIONS[i]
-#		popup_view_file.set_item_checked(i+2, exts_enabled)
 	#
 	for i in len(INTERNAL_EXTENSIONS):
 		var ext = INTERNAL_EXTENSIONS[i]
 		var id = i+len(MAIN_EXTENSIONS)+3
-#		popup_view_file.set_item_checked(id, false)
-		# TODOOO
 
 func save_state():
 	var state:Dictionary = {
 		"save_version": "1",
-		"current_directory": current_directory,
 		"font_size": FONT.size,
 		"tabs": {},
 		"selected": get_selected_file(),
@@ -244,8 +248,6 @@ func load_state():
 		if file_path == state.selected:
 			selected = tab
 	
-	current_directory = state.get("current_directory", current_directory)
-	
 	_load_property(state, "show", true)
 	
 	update_checks()
@@ -259,6 +261,11 @@ func load_state():
 	$c/div1/div2.split_offset = state.get("div2", $c/div1/div2.split_offset)
 	
 	emit_signal("state_loaded")
+	
+	yield(get_tree(), "idle_frame")
+	if selected:
+		emit_signal("file_selected", selected.file_path)
+	
 
 func _load_property(state:Dictionary, property:String, merge:bool=false):
 	if property in state and typeof(state[property]) == typeof(self[property]):
@@ -403,7 +410,7 @@ func is_tagged(file_path:String) -> bool:
 func is_tagging() -> bool:
 	return len(tags) > 0
 
-func popup_create_file(dir:String="res://"):
+func popup_create_file(dir:String=current_directory):
 	file_dialog.mode = FileDialog.MODE_SAVE_FILE
 	file_dialog.current_dir = dir
 	file_dialog.window_title = "Create File"
@@ -412,7 +419,7 @@ func popup_create_file(dir:String="res://"):
 	file_dialog.set_meta("mode", "create_file")
 	file_dialog.show()
 
-func popup_create_dir(dir:String="res://"):
+func popup_create_dir(dir:String=current_directory):
 	file_dialog.mode = FileDialog.MODE_OPEN_DIR
 	file_dialog.current_dir = dir
 	file_dialog.window_title = "Create Folder"
@@ -429,11 +436,13 @@ func create_file(file_path:String):
 		open_file(file_path)
 		select_file(file_path)
 	else:
-		push_error("couldnt create %s" % file_path)
+		var err_msg = "couldnt create %s" % file_path
+		console.err(err_msg)
+		push_error(err_msg)
 
 func create_dir(file_path:String):
 	var d:Directory = Directory.new()
-	if file_path and file_path.begins_with("res://") and not d.file_exists(file_path):
+	if file_path and file_path.begins_with(current_directory) and not d.file_exists(file_path):
 		print("creating folder \"%s\"" % file_path)
 		d.make_dir(file_path)
 		refresh_files()
@@ -509,10 +518,22 @@ func _open_file(file_path:String):
 	tab.load_file(file_path)
 	return tab
 
+func is_allowed_extension(file_path:String) -> bool:
+	var ext = get_extension(file_path)
+	return ext in MAIN_EXTENSIONS
+
 func open_file(file_path:String, temporary:bool=false):
 	var tab = get_tab(file_path)
 	if tab:
 		return tab
+	
+	elif not File.new().file_exists(file_path):
+		push_error("no file %s" % file_path)
+		return null
+	
+	elif not is_allowed_extension(file_path):
+		push_error("can't open %s" % file_path)
+		return null
 	
 	else:
 		tab = _open_file(file_path)
@@ -596,6 +617,13 @@ func rename_file(old_path:String, new_path:String):
 		push_error("couldn't rename %s to %s." % [old_path, new_path])
 
 func select_file(file_path:String):
+	if not File.new().file_exists(file_path):
+		push_error("no file %s" % file_path)
+		return
+	
+	if not is_allowed_extension(file_path):
+		return
+	
 	var temp = get_temporary_tab()
 	if temp:
 		if temp.file_path == file_path:
@@ -611,8 +639,10 @@ func select_file(file_path:String):
 	_selected_file_changed(file_path)
 
 func set_directory(path:String=current_directory):
-	var gpath = ProjectSettings.globalize_path(path)
-	var dname = gpath.get_file()
+#	var gpath = ProjectSettings.globalize_path(path)
+#	var dname = gpath.get_file()
+	console.msg("Set " + path)
+	
 	current_directory = path
 	file_dialog.current_dir = path
 	refresh_files()
@@ -640,13 +670,18 @@ func get_all_tabs() -> Array:
 func refresh_files():
 	var old_file_list = file_list.duplicate(true)
 	file_list.clear()
+	dir_paths.clear()
+	file_paths.clear()
 	var dir = Directory.new()
-	if dir.open(current_directory) == OK:
+	var err = dir.open(current_directory)
+	if err == OK:
 		_scan_dir("", current_directory, dir, file_list, old_file_list.get("", {}))
 		emit_signal("updated_file_list")
 	else:
-		push_error("error trying to load %s." % current_directory)
-
+		var err_msg = "error trying to load %s: %s" % [current_directory, err]
+		push_error(err_msg)
+		console.err(err_msg)
+		
 func show_dir(fname:String, base_dir:String) -> bool:
 	if not show.dir.gdignore and File.new().file_exists(base_dir.plus_file(".gdignore")):
 		return false
@@ -686,6 +721,7 @@ func _scan_dir(id:String, path:String, dir:Directory, last_dir:Dictionary, old_l
 	
 	while fname:
 		var file_path = dir.get_current_dir().plus_file(fname)
+		console.msg(file_path)
 		
 		if dir.current_is_dir():
 			if show_dir(fname, file_path):
@@ -704,8 +740,10 @@ func _scan_dir(id:String, path:String, dir:Directory, last_dir:Dictionary, old_l
 	for p in a_dirs_and_files:
 		if a_dirs_and_files[p] is Dictionary:
 			a_dirs.append(p)
+			dir_paths.append(a_dirs_and_files[p].file_path)
 		else:
 			a_files.append(a_dirs_and_files[p])
+			file_paths.append(a_dirs_and_files[p])
 	
 	sort_on_ext(a_dirs)
 	sort_on_ext(a_files)
@@ -737,9 +775,12 @@ static func get_extension(file_path:String) -> String:
 		return file.split(".", true, 1)[1]
 	return ""
 
-static func get_extension_helper(file_path:String) -> TE_ExtensionHelper:
+func get_extension_helper(file_path:String) -> TE_ExtensionHelper:
 	var ext:String = get_extension(file_path).replace(".", "_")
 	var ext_path:String = "res://addons/text_editor/ext/ext_%s.gd" % ext
-	if File.new().file_exists(ext_path):
-		return load(ext_path).new()
+	var script = load(ext_path)
+	if script:
+		return script.new()
+	
+	console.err("no helper %s" % ext_path)
 	return load("res://addons/text_editor/ext/TE_ExtensionHelper.gd").new()

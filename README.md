@@ -58,7 +58,8 @@ This will then highlight *Files* and *Symbols* that have that tag.
 
 # Todo
 - [x] `1.1` Preserve folders open/close state.
-- [ ] Search.
+- [x] `1.3` Search all files.
+- [ ] Search file.
 - [ ] Find and replace.
 - [ ] Improve meta data based on format.
 - [x] `1.2` Recycle folders.
