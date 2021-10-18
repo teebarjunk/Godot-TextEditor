@@ -1,3 +1,4 @@
+tool
 extends "res://addons/text_editor/TE_RichTextLabel.gd"
 
 func msg(msg):

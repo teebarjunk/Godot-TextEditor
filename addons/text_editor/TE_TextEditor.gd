@@ -265,7 +265,6 @@ func load_state():
 	yield(get_tree(), "idle_frame")
 	if selected:
 		emit_signal("file_selected", selected.file_path)
-	
 
 func _load_property(state:Dictionary, property:String, merge:bool=false):
 	if property in state and typeof(state[property]) == typeof(self[property]):
@@ -358,6 +357,8 @@ func _menu_view_file(index:int):
 		if ext in exts_enabled:
 			exts_enabled[ext] = not exts_enabled[ext]
 			popup_view_file.set_item_checked(index, exts_enabled[ext])
+		else:
+			print("no %s in %s" % [ext, exts_enabled])
 	
 	refresh_files()
 	save_state()
