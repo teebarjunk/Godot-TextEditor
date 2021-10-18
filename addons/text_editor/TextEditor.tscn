@@ -39,7 +39,7 @@ TooltipLabel/fonts/font = ExtResource( 12 )
 [sub_resource type="Theme" id=7]
 TooltipLabel/fonts/font = ExtResource( 12 )
 
-[node name="text_editor" type="Control"]
+[node name="editor" type="Control"]
 anchor_right = 1.0
 anchor_bottom = 1.0
 size_flags_horizontal = 3

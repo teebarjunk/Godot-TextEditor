@@ -4,7 +4,7 @@ extends TE_ExtensionHelper
 func toggle_comment(t:TextEdit, head:String="<!-- ", tail:String=" -->"):
 	return .toggle_comment(t, head, tail)
 
-func apply_colors(e:TE_TextEditor, t:TextEdit):
+func apply_colors(e:TE_Editor, t:TextEdit):
 	.apply_colors(e, t)
 	
 	t.add_keyword_color("true", e.color_var)

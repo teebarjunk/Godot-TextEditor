@@ -1,5 +1,5 @@
 # Text Editor
-Version `1.4`
+Version `1.5`
 
 ![](README/readme_preview.png)
 
@@ -26,10 +26,12 @@ Version `1.4`
 
 # Controls
 - `ctrl + W` Close file
+- `ctrl + N` New file
 - `ctrl + shift + W` Open last closed file 
 - `ctrl + tab` Select next open file
 - `ctrl + shift + tab` Select last open file
 - `ctrl + mouse wheel` Adjust font size
+- `ctrl + shift + mouse wheel` Adjust ui font size
 - `ctrl + up` `ctrl + down` Move selected lines
 - `ctrl + /` Toggle line comments
 - `ctrl + M` Toggle file meta info
