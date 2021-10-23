@@ -25,8 +25,8 @@ Version `1.6`
 		- `.yaml`: `# `
 
 # Controls
-- `ctrl + W` Close file
 - `ctrl + N` New file
+- `ctrl + W` Close file
 - `ctrl + shift + W` Open last closed file 
 - `ctrl + tab` Select next open file
 - `ctrl + shift + tab` Select last open file
@@ -41,15 +41,19 @@ Version `1.6`
 - `ctrl + click` Select entire block + children.
 - `ctrl + shift + click` Select block without children.
 
+## Editor View
+- `ctrl + click` anywhere: Scroll to nearest symbol in symbol view.
+- `ctrl + click` inside brackets: Goto local file.
+
 # Symbols and Tags
-To make it easier to find stuff there is a *Symbol* viewer.
+*Symbols* are like a Table of Contents for a file.
 
 - `Markdown` uses headings `# Heading`
 - `JSON` uses Dictionaries `"object": {`
 - `YAML` uses Dictionaries `object: `
 - `ini` `cfg` use headings `[heading]`
 
-Symbols can have tags. Tags are added with comments.
+Symbols can have *Tags*. Tags are added with comments.
 
 - `Markdown` uses `<!-- #tag1 #tag2 -->`
 - `JSON` uses `"#": "#tag1 #tag2"`
