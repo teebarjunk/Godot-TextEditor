@@ -35,6 +35,12 @@ func _ready():
 	dir_popup.add_item("New File")
 	dir_popup.add_separator()
 	dir_popup.add_item("Remove")
+	dir_popup.add_separator()
+	dir_popup.add_item("Tint Yellow")
+	dir_popup.add_item("Tint Red")
+	dir_popup.add_item("Tint Blue")
+	dir_popup.add_item("Tint Green")
+	dir_popup.add_item("Reset Tint")
 	_e = dir_popup.connect("index_pressed", self, "_dir_popup")
 	dir_popup.add_font_override("font", editor.FONT)
 	
@@ -52,6 +58,21 @@ func _dir_popup(index:int):
 	match dir_popup.get_item_text(index):
 		"New File": editor.popup_create_file(file)
 		"Remove": editor.recycle(file)
+		"Tint Yellow":
+			selected[1].tint = Color.gold
+			_redraw()
+		"Tint Red":
+			selected[1].tint = Color.tomato
+			_redraw()
+		"Tint Blue":
+			selected[1].tint = Color.deepskyblue
+			_redraw()
+		"Tint Green":
+			selected[1].tint = Color.chartreuse
+			_redraw()
+		"Reset Tint":
+			selected[1].tint = Color.white
+			_redraw()
 
 func _file_popup(index:int):
 	var type = selected[0]
@@ -115,7 +136,7 @@ func _input(e:InputEvent):
 					
 					if type == "d":
 						var dir:String = file.file_path
-						var old_path:String = drag_file
+						var old_path:String = drag_file.file_path
 						var new_path:String = dir.plus_file(old_path.get_file())
 						editor.rename_file(old_path, new_path)
 					
@@ -176,7 +197,7 @@ func _draw_dir(dir:Dictionary, deep:int):
 	var link:String = meta(head, ["d", dir], file)
 	if file.begins_with(editor.PATH_TRASH) and file.count("/") == 3:
 		link += " " + meta(clr("⬅", Color.yellowgreen), ["unrecycle", dir], file)
-	lines.append(clr(link, Color.white.darkened(dimmest)))
+	lines.append(clr(link, dir.tint.darkened(dimmest)))
 	
 	var sel = editor.get_selected_tab()
 	sel = sel.file_path if sel else ""
@@ -199,7 +220,7 @@ func _draw_dir(dir:Dictionary, deep:int):
 			
 			var is_selected = file_path == sel
 			var is_opened = editor.is_opened(file_path)
-			var color = Color.white
+			var color = dir.tint
 			head = "┣╸" if i != last else "┗╸"
 			
 			if "readme" in file.to_lower():

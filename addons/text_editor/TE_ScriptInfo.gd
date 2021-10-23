@@ -3,7 +3,7 @@ extends "res://addons/text_editor/TE_RichTextLabel.gd"
 
 var chapter_info:Array = []
 var sort_on:String = "words"
-var sort_reverse:Dictionary = { id=false, words=false, chaps=false }
+var sort_reverse:Dictionary = { id=false, words=false, chaps=false, "%":false }
 
 func _ready():
 	var btn = get_parent().get_node("update")
@@ -32,13 +32,13 @@ func _update():
 func _chapter(path:String, line:int, id:String):
 	if not id:
 		id = "???"
-	chapter_info.append({ path=path, line=line, id=id, words=0, chaps=0 })
+	chapter_info.append({ path=path, line=line, id=id, words=0, chaps=0, "%":0.0 })
 	
 func _process_md(path:String):
 	var lines = TE_Util.load_text(path).split("\n")
 	var is_entire_file:bool = false
 	
-	_chapter(path, 0, "NOH")
+	_chapter(path, 0, "(Noname)")
 	var i = 0
 	while i < len(lines):
 		# skip head meta
@@ -46,6 +46,14 @@ func _process_md(path:String):
 			is_entire_file = true
 			i += 1
 			while i < len(lines) and not lines[i].begins_with("---"):
+				if lines[i].begins_with("name: "):
+					chapter_info[-1].id = lines[i].split("name: ", true, 1)[1]
+				
+				elif lines[i].begins_with("progress: "):
+					chapter_info[-1]["%"] = float(lines[i].split("progress: ", true, 1)[1].replace("%", ""))
+				elif lines[i].begins_with("prog: "):
+					chapter_info[-1]["%"] = float(lines[i].split("prog: ", true, 1)[1].replace("%", ""))
+				
 				i += 1
 		
 		# skip code blocks
@@ -106,7 +114,7 @@ func _redraw():
 	
 	var c1 = Color.white.darkened(.4)
 	var c2 = Color.white.darkened(.3)
-	var cols = ["id", "words", "chaps"]
+	var cols = ["id", "words", "chaps", "%"]
 	push_align(RichTextLabel.ALIGN_CENTER)
 	push_table(len(cols))
 	for id in cols:
@@ -146,6 +154,13 @@ func _redraw():
 			add_text(TE_Util.commas(item[x]))
 			pop()
 			pop()
+		
+		# percent
+		push_cell()
+		push_color(clr)
+		add_text(str(int(item["%"])))
+		pop()
+		pop()
 	
 	pop()
 	pop()

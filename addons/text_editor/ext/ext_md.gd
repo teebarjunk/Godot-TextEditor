@@ -42,9 +42,10 @@ func apply_colors(e:TE_Editor, t:TextEdit):
 	t.add_color_region("- [", " ]", e.color_text.darkened(.6), false)
 	
 	# code blocks
-	var code:Color = lerp(e.color_text.darkened(.5), Color.yellowgreen, .5)
+	var code:Color = TE_Util.hue_shift(e.color_var, .33)#.darkened(.25)
 	t.add_color_region("```", "```", code, false)
 	t.add_color_region("~~~", "~~~", code, false)
+	t.add_color_region("---", "---", code, false)
 	
 	# strikeout
 	t.add_color_region("~~", "~~", Color.tomato, false)
@@ -75,8 +76,12 @@ func get_symbols(t:String) -> Dictionary:
 						tag = tag.strip_edges()
 						if tag:
 							last.tags.append(tag)
+				
+#				elif "name: " in lines[i]:
+#					last.name = lines[i].split("name: ", true, 1)[1]
+				
 				i += 1
-			i += 1
+#			i += 1
 		
 		# symbols
 		elif lines[i].begins_with("#"):

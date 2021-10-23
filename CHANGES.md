@@ -1,3 +1,17 @@
+# 1.6
+- Added `Uppercase` `Lowercase` and `Capitalize` option to popup menu for selected text.
+- `ctrl + click` in symbol view selects entire "chapter" and sub "chapters". `ctrl + shift + click` selects only one "chapter".
+- `ctrl + click` in editor will auto scroll symbol view.
+- Folders can be tinted.
+- `word_wrap` state is saved/loaded.
+- Fixed error that occured when folder containing binary was moved.
+- Markdown can have a `progress` field in meta data which can be sorted in `sys`.
+- Markdown meta info taken into account for `sys`
+- Markdown meta info colourized.
+- Markdown code color based on variable color.
+- JSON comments like YAML: `"#": "comment"`
+- JSON color tweaks.
+
 # 1.5
 - Added `Ctrl + N` to immediately create new file without defining path.
 - New unsaved file will have contents remembered.

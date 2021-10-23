@@ -40,6 +40,8 @@ signal save_files()
 signal state_saved()
 signal state_loaded()
 
+signal selected_symbol_line(symbol_index)
+
 var plugin = null
 var plugin_hint:bool = false
 
@@ -64,7 +66,7 @@ var color_comment:Color = Color.white.darkened(.6)
 var color_symbol:Color = Color.deepskyblue
 var color_tag:Color = Color.yellow
 var color_var:Color = Color.orange
-var color_varname:Color = Color.white.darkened(.25)
+var color_varname:Color = color_text.darkened(.25)
 
 onready var test_button:Node = $c/c/c/test
 onready var tab_parent:TabContainer = $c/div1/div2/c/c/tab_container
@@ -198,9 +200,15 @@ func _ready():
 	set_directory()
 
 func _toggle_word_wrap():
-	tab_prefab.set_wrap_enabled(word_wrap.pressed)
+	set_word_wrap(word_wrap.pressed)
+
+func set_word_wrap(ww:bool):
+	tab_prefab.set_wrap_enabled(ww)
 	for tab in get_all_tabs():
-		tab.set_wrap_enabled(word_wrap.pressed)
+		tab.set_wrap_enabled(ww)
+
+func select_symbol_line(line:int):
+	emit_signal("selected_symbol_line", line)
 
 func update_checks():
 	# Directories
@@ -223,13 +231,21 @@ func update_checks():
 		var ext = INTERNAL_EXTENSIONS[i]
 		var id = i+len(MAIN_EXTENSIONS)+3
 
+func get_localized_path(file_path:String):
+	assert(file_path.begins_with(current_directory))
+	return file_path.substr(len(current_directory))
+
+func get_globalized_path(file_path:String):
+	return current_directory.plus_file(file_path)
+
 func save_state():
 	var state:Dictionary = {
 		"save_version": "1",
 		"font_size": FONT.size,
 		"font_size_ui": FONT_R.size,
 		"tabs": {},
-		"selected": get_selected_file(),
+		"selected": get_localized_path(get_selected_file()),
+		"word_wrap": word_wrap.pressed,
 		"show": show,
 		"tags": tags,
 		"tag_counts": tag_counts,
@@ -247,20 +263,32 @@ func save_state():
 	state["window_size"] = [ws.x, ws.y]
 	
 	for tab in get_all_tabs():
-		state.tabs[tab.file_path] = tab.get_state()
+		state.tabs[get_localized_path(tab.file_path)] = tab.get_state()
 	
 	TE_Util.save_json(PATH_STATE, state)
 	emit_signal("state_saved")
+
+func _fix_tint(d:Dictionary):
+	if "tint" in d:
+		var c = d.tint.split_floats(",")
+		d.tint = Color(c[0], c[1], c[2], c[3])
 
 func load_state():
 	var state:Dictionary = TE_Util.load_json(PATH_STATE)
 	if not state:
 		return
 	
+	# word wrap
+	var ww = state.get("word_wrap", word_wrap)
+	word_wrap.pressed = ww
+	set_word_wrap(ww)
+	
 	var selected
 	for file_path in state.tabs:
+		var st = state.tabs[file_path]
+		file_path = get_globalized_path(file_path)
 		var tab = _open_file(file_path)
-		tab.set_state(state.tabs[file_path])
+		tab.set_state(st)
 		if file_path == state.selected:
 			selected = tab
 	
@@ -273,6 +301,8 @@ func load_state():
 	var font_size_ui = state.get("font_size_ui", FONT_R.size)
 	for f in [FONT_R, FONT_B, FONT_I, FONT_BI]:
 		f.size = font_size_ui
+	
+	TE_Util.dig(state.file_list, self, "_fix_tint")
 	
 	_load_property(state, "file_list")
 	_load_property(state, "tag_counts")
@@ -557,6 +587,9 @@ func get_temporary_tab() -> TextEdit:
 			return child
 	return null
 
+func load_file(file_path:String) -> String:
+	return TE_Util.load_text(file_path)
+
 func save_file(file_path:String, text:String):
 	var f:File = File.new()
 	var _err = f.open(file_path, File.WRITE)
@@ -702,7 +735,9 @@ func rename_file(old_path:String, new_path:String):
 		return
 	
 	if File.new().file_exists(new_path):
-		push_error("can't rename %s to %s. file already exists." % [old_path, new_path])
+		var err_msg = "can't rename %s to %s. file already exists." % [old_path, new_path]
+		push_error(err_msg)
+		console.err(err_msg)
 		return
 	
 	var selected = get_selected_file()
@@ -713,7 +748,9 @@ func rename_file(old_path:String, new_path:String):
 		emit_signal("file_renamed", old_path, new_path)
 	
 	else:
-		push_error("couldn't rename %s to %s." % [old_path, new_path])
+		var err_msg = "couldn't rename %s to %s." % [old_path, new_path]
+		push_error(err_msg)
+		console.err(err_msg)
 
 func select_file(file_path:String):
 	if not File.new().file_exists(file_path):
@@ -809,7 +846,9 @@ func _scan_dir(id:String, path:String, dir:Directory, last_dir:Dictionary, old_l
 		files=a_files,
 		dirs=a_dirs,
 		show=true,
-		open=old_last_dir.get("open", true) }
+		open=old_last_dir.get("open", true),
+		tint=old_last_dir.get("tint", Color.white)
+	}
 	last_dir[id] = info
 	
 	var fname = dir.get_next()

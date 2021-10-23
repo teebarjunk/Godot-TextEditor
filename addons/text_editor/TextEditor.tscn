@@ -171,7 +171,7 @@ items = [ "Rename", null, 0, false, false, 0, 0, null, "", false, "", null, 0, f
 margin_right = 20.0
 margin_bottom = 20.0
 custom_fonts/font = ExtResource( 14 )
-items = [ "New File", null, 0, false, false, 0, 0, null, "", false, "New Folder", null, 0, false, false, 1, 0, null, "", false, "", null, 0, false, false, -1, 0, null, "", true, "Remove", null, 0, false, false, 3, 0, null, "", false ]
+items = [ "New File", null, 0, false, false, 0, 0, null, "", false, "", null, 0, false, false, -1, 0, null, "", true, "Remove", null, 0, false, false, 2, 0, null, "", false ]
 
 [node name="div2" type="HSplitContainer" parent="c/div1"]
 margin_left = 218.0
@@ -241,6 +241,7 @@ custom_fonts/normal_font = ExtResource( 12 )
 bbcode_enabled = true
 meta_underlined = false
 text = "active: False
+active: False
 "
 script = ExtResource( 1 )
 

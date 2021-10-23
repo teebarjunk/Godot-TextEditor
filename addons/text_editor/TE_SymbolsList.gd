@@ -8,6 +8,7 @@ func _ready():
 	_e = editor.connect("symbols_updated", self, "_redraw")
 	_e = editor.connect("tags_updated", self, "_redraw")
 	_e = editor.connect("file_selected", self, "_file_selected")
+	_e = editor.connect("selected_symbol_line", self, "_selected_symbol_line")
 	_e = get_v_scroll().connect("value_changed", self, "_scrolling")
 	
 	add_font_override("normal_font", editor.FONT_R)
@@ -16,6 +17,10 @@ func _ready():
 	add_font_override("bold_italics_font", editor.FONT_BI)
 	
 	call_deferred("_redraw")
+
+func _selected_symbol_line(line:int):
+#	scroll_to_line(get_line_count()-1)
+	scroll_to_line(line)
 
 func _file_selected(file_path:String):
 	yield(get_tree(), "idle_frame")
@@ -26,7 +31,33 @@ func _scrolling(v):
 
 func _clicked(args:Array):
 	var te:TextEdit = editor.get_selected_tab()
-	te.goto_line(args[1])
+	
+	# select entire symbol block?
+	if Input.is_key_pressed(KEY_CONTROL):
+		var tab = editor.get_selected_tab()
+		var symbols = {} if not tab else tab.symbols
+		var line_index:int = args[1]
+		var symbol_index:int = symbols.keys().find(line_index)
+		var next_line:int
+		
+		# select sub symbol blocks?
+		if not Input.is_key_pressed(KEY_SHIFT):
+			var deep = symbols[line_index].deep
+			
+			while symbol_index < len(symbols)-1 and symbols.values()[symbol_index+1].deep > deep:
+				symbol_index += 1
+		
+		if symbol_index == len(symbols)-1:
+			next_line = tab.get_line_count()-1
+		
+		else:
+			next_line = symbols.keys()[symbol_index+1]-1
+		
+		tab.select(line_index, 0, next_line, len(tab.get_line(next_line)))
+		te.goto_line(line_index)
+	
+	else:
+		te.goto_line(args[1])
 
 func _redraw():
 	var tab = editor.get_selected_tab()

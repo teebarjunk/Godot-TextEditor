@@ -9,6 +9,7 @@ var helper:TE_ExtensionHelper
 var temporary:bool = false setget set_temporary
 var modified:bool = false
 var file_path:String = ""
+var mouse_inside:bool = false
 
 var symbols:Dictionary = {}
 var tags:Dictionary = {}
@@ -37,19 +38,48 @@ func _ready():
 	_e = connect("text_changed", self, "text_changed")
 	_e = connect("focus_entered", self, "set", ["in_focus", true])
 	_e = connect("focus_exited", self, "set", ["in_focus", false])
+	_e = connect("mouse_entered", self, "set", ["mouse_inside", true])
+	_e = connect("mouse_exited", self, "set", ["mouse_inside", false])
 	
 	if get_parent() is TabContainer:
 		get_parent().connect("tab_changed", self, "_tab_changed")
 		get_parent().connect("tab_selected", self, "_tab_changed")
 	
 	add_font_override("font", editor.FONT)
-	get_menu().add_font_override("font", editor.FONT)
+	var popup = get_menu()
+	popup.add_font_override("font", editor.FONT)
+	
+	popup.add_separator()
+	popup.add_item("Uppercase")
+	popup.add_item("Lowercase")
+	popup.add_item("Capitalize")
+	popup.add_item("Variable")
+	_e = popup.connect("index_pressed", self, "_popup_menu")
 	
 	# hint
 	theme = Theme.new()
 	theme.set_font("font", "TooltipLabel", editor.FONT_R)
 	
 	TE_Util.dig(self, self, "_node")
+
+func _popup_menu(index:int):
+	match get_menu().get_item_text(index):
+		"Uppercase": selection_uppercase()
+		"Lowercase": selection_lowercase()
+		"Capitalize": selection_capitalize()
+		"Variable": selection_variable()
+
+func selection_uppercase():
+	insert_text_at_cursor(get_selection_text().to_upper())
+
+func selection_lowercase():
+	insert_text_at_cursor(get_selection_text().to_lower())
+
+func selection_variable():
+	insert_text_at_cursor(get_selection_text().to_lower().replace(" ", "_"))
+
+func selection_capitalize():
+	insert_text_at_cursor(get_selection_text().capitalize())
 
 func _node(n):
 	var _e
@@ -105,11 +135,23 @@ func _input(e):
 	if not editor.is_plugin_active():
 		return
 	
-	if not visible or not in_focus:
+	if not visible or not in_focus or not mouse_inside:
 		return
 	
 	if e is InputEventMouseButton and not e.pressed and e.control:
 		var line:String = get_line(cursor_get_line())
+		
+		# if selecting a symbol, show it in symbol viewer
+		if cursor_get_line() in symbols:
+			editor.select_symbol_line(symbols.keys().find(cursor_get_line())-1)
+		else:
+			var l = cursor_get_line()
+			editor.select_symbol_line(0)
+			for i in len(symbols):
+				if symbols.keys()[i] > l:
+					editor.select_symbol_line(max(0, i-2))
+					break
+		
 		var ca = line.find("(")
 		var cb = line.find_last(")")
 		if ca != -1 and cb != -1:
@@ -209,7 +251,6 @@ func _file_selected(p:String):
 		
 
 func goto_line(line:int):
-	prints("goto ", line)
 	# force scroll to bottom so selected line will be at top
 	cursor_set_line(get_line_count())
 	cursor_set_line(line)
@@ -285,7 +326,7 @@ func _popup(msg):
 func load_file(path:String):
 	file_path = path
 	if path != "":
-		text = TE_Util.load_text(path)
+		text = editor.load_file(path)
 	update_colors()
 	update_name()
 	
@@ -328,8 +369,8 @@ func update_name():
 		if temporary: n = "?" + n
 		if modified: n = "*" + n
 	
-	if len(n) > 9:
-		n = n.substr(0, 6) + "..."
+	if len(n) > 12:
+		n = n.substr(0, 9) + "..."
 	
 	editor.tab_parent.set_tab_title(get_index(), n)
 	editor.tab_parent.get_tab_control(get_index()).hint_tooltip = file_path

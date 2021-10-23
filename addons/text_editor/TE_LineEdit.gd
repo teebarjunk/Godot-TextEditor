@@ -33,6 +33,5 @@ func _lost_focus():
 
 func _enter(t:String):
 	if fr:
-		print("calling %s with %s" % [fr, t])
 		fr.call_func(t)
 	hide()

@@ -1,5 +1,5 @@
 # Text Editor
-Version `1.5`
+Version `1.6`
 
 ![](README/readme_preview.png)
 
@@ -35,6 +35,11 @@ Version `1.5`
 - `ctrl + up` `ctrl + down` Move selected lines
 - `ctrl + /` Toggle line comments
 - `ctrl + M` Toggle file meta info
+- `ctrl + F` Search for text in all files
+
+## Symbol View
+- `ctrl + click` Select entire block + children.
+- `ctrl + shift + click` Select block without children.
 
 # Symbols and Tags
 To make it easier to find stuff there is a *Symbol* viewer.
