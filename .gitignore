@@ -16,3 +16,4 @@ test_files/
 .trash/
 .trash.json
 .text_editor_state.json
+word_skip_list.txt
