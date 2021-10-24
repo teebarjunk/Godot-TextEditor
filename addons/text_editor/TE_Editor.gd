@@ -9,8 +9,8 @@ const FONT_B:DynamicFont = preload("res://addons/text_editor/fonts/font_b.tres")
 const FONT_I:DynamicFont = preload("res://addons/text_editor/fonts/font_i.tres")
 const FONT_BI:DynamicFont = preload("res://addons/text_editor/fonts/font_bi.tres")
 
-const PATH_TRASH:String = "res://.trash"
-const PATH_STATE:String = "res://.text_editor_state.json"
+const DNAME_TRASH:String = ".trash"
+const FNAME_STATE:String = ".text_editor_state.json"
 
 const MAIN_EXTENSIONS:PoolStringArray = PoolStringArray([
 	"txt", "md", "json", "csv", "cfg", "ini", "yaml"
@@ -57,11 +57,13 @@ var show:Dictionary = {
 		trash=false
 	},
 	file={
-		hidden=false
+		hidden=false,
+		extensionless=false
 	}
 }
 
 var color_text:Color = Color.white
+var color_background:Color = Color.transparent#Color.white.darkened(.85)
 var color_comment:Color = Color.white.darkened(.6)
 var color_symbol:Color = Color.deepskyblue
 var color_tag:Color = Color.yellow
@@ -161,7 +163,8 @@ func _ready():
 	popup_view_file.clear()
 	popup_view_file.set_name("Files")
 	popup_view_file.add_font_override("font", FONT_R)
-	popup_view_file.add_check_item("Hidden", 0)
+	popup_view_file.add_check_item("Hidden")
+	popup_view_file.add_check_item("Extensionless")
 	popup_view_file.set_item_checked(0, show.file.hidden)
 	
 	popup_view_file.add_separator()
@@ -233,7 +236,10 @@ func update_checks():
 
 func get_localized_path(file_path:String):
 	assert(file_path.begins_with(current_directory))
-	return file_path.substr(len(current_directory))
+	var out:String = file_path.substr(len(current_directory))
+	if out.begins_with("/"):
+		return out.substr(1)
+	return out
 
 func get_globalized_path(file_path:String):
 	return current_directory.plus_file(file_path)
@@ -244,13 +250,14 @@ func save_state():
 		"font_size": FONT.size,
 		"font_size_ui": FONT_R.size,
 		"tabs": {},
-		"selected": get_localized_path(get_selected_file()),
+		"selected": get_selected_file(),
 		"word_wrap": word_wrap.pressed,
 		"show": show,
 		"tags": tags,
 		"tag_counts": tag_counts,
 		"tags_enabled": tags_enabled,
 		"exts_enabled": exts_enabled,
+		"shortcuts": shortcuts,
 		
 		"file_list": file_list,
 		
@@ -265,7 +272,7 @@ func save_state():
 	for tab in get_all_tabs():
 		state.tabs[get_localized_path(tab.file_path)] = tab.get_state()
 	
-	TE_Util.save_json(PATH_STATE, state)
+	TE_Util.save_json(current_directory.plus_file(FNAME_STATE), state)
 	emit_signal("state_saved")
 
 func _fix_tint(d:Dictionary):
@@ -274,7 +281,7 @@ func _fix_tint(d:Dictionary):
 		d.tint = Color(c[0], c[1], c[2], c[3])
 
 func load_state():
-	var state:Dictionary = TE_Util.load_json(PATH_STATE)
+	var state:Dictionary = TE_Util.load_json(current_directory.plus_file(FNAME_STATE))
 	if not state:
 		return
 	
@@ -283,14 +290,14 @@ func load_state():
 	word_wrap.pressed = ww
 	set_word_wrap(ww)
 	
-	var selected
+	var selected_file:String
 	for file_path in state.tabs:
 		var st = state.tabs[file_path]
 		file_path = get_globalized_path(file_path)
 		var tab = _open_file(file_path)
 		tab.set_state(st)
 		if file_path == state.selected:
-			selected = tab
+			selected_file = file_path
 	
 	_load_property(state, "show", true)
 	
@@ -308,6 +315,7 @@ func load_state():
 	_load_property(state, "tag_counts")
 	_load_property(state, "tags_enabled")
 	_load_property(state, "exts_enabled")
+	_load_property(state, "shortcuts")
 	
 	# dividers
 	$c/div1.split_offset = state.get("div1", $c/div1.split_offset)
@@ -323,8 +331,10 @@ func load_state():
 	emit_signal("state_loaded")
 	
 	yield(get_tree(), "idle_frame")
-	if selected:
-		emit_signal("file_selected", selected.file_path)
+	if selected_file:
+		select_file(selected_file)
+#	if selected_tab:
+#		emit_signal("file_selected", selected_tab.file_path)
 
 func _load_property(state:Dictionary, property:String, merge:bool=false):
 	if property in state and typeof(state[property]) == typeof(self[property]):
@@ -351,6 +361,7 @@ func is_plugin_active():
 	
 	return plugin_hint and visible
 
+var shortcuts:Dictionary = {}
 func _input(e):
 	if not is_plugin_active():
 		return
@@ -374,7 +385,10 @@ func _input(e):
 			if e.shift:
 				open_last_file()
 			else:
-				get_selected_tab().close()
+				var sel_tab = get_selected_tab()
+				if sel_tab != null:
+					sel_tab.close()
+			
 			get_tree().set_input_as_handled()
 		
 		# create new file
@@ -382,8 +396,23 @@ func _input(e):
 			open_file("", true)
 			get_tree().set_input_as_handled()
 	
+		# shortcuts
+		elif e.scancode >= KEY_0 and e.scancode <= KEY_9:
+			if e.shift:
+				var sf = get_selected_file()
+				if sf:
+					shortcuts[str(e.scancode)] = sf
+					console.msg("shortcut %s: %s" % [e.scancode, sf])
+			
+			else:
+				if str(e.scancode) in shortcuts:
+					var sf = shortcuts[str(e.scancode)]
+					open_file(sf)
+					select_file(sf)
+			
+			get_tree().set_input_as_handled()
+	
 	if e is InputEventMouseButton and e.control:
-		
 		# ui font
 		if e.shift:
 			if e.button_index == BUTTON_WHEEL_DOWN:
@@ -447,20 +476,24 @@ func _menu_view_dir(index:int):
 	save_state()
 
 func _menu_view_file(index:int):
-	# hidden files
-	if index == 0:
-		show.file.hidden = not show.file.hidden
-		popup_view_file.set_item_checked(index, show.file.hidden)
-	
-	# main extensions
-	else:
-		var text = popup_view_file.get_item_text(index)
-		var ext = text.substr(2)
-		if ext in exts_enabled:
-			exts_enabled[ext] = not exts_enabled[ext]
-			popup_view_file.set_item_checked(index, exts_enabled[ext])
-		else:
-			print("no %s in %s" % [ext, exts_enabled])
+	var text = popup_view_file.get_item_text(index)
+	match text:
+		"Hidden":
+			show.file.hidden = not show.file.hidden
+			popup_view_file.set_item_checked(index, show.file.hidden)
+		
+		"Extensionless":
+			show.file.extensionless = not show.file.extensionless
+			popup_view_file.set_item_checked(index, show.file.extensionless)
+		
+		# file extensions
+		_:
+			var ext = text.substr(2)
+			if ext in exts_enabled:
+				exts_enabled[ext] = not exts_enabled[ext]
+				popup_view_file.set_item_checked(index, exts_enabled[ext])
+			else:
+				print("no %s in %s" % [ext, exts_enabled])
 	
 	refresh_files()
 	save_state()
@@ -643,7 +676,11 @@ func _open_file(file_path:String):
 	return tab
 
 func is_allowed_extension(file_path:String) -> bool:
-	var ext = get_extension(file_path)
+	var file = file_path.get_file()
+	if not "." in file and show.file.extensionless:
+		return true
+	
+	var ext = get_extension(file)
 	return ext in MAIN_EXTENSIONS
 
 func open_file(file_path:String, temporary:bool=false):
@@ -695,8 +732,18 @@ func unrecycle(file_path:String):
 		push_error(err_msg)
 		console.err(err_msg)
 
-func recycle(file_path:String):
-	if file_path.begins_with(PATH_TRASH):
+func is_trash_path(file_path:String) -> bool:
+	var path_trash:String = current_directory.plus_file(DNAME_TRASH)
+	return file_path.begins_with(path_trash) and file_path != path_trash
+
+func recycle(file_path:String, is_file:bool):
+	
+	if not is_file:
+		print("TODO: close all open windows")
+	
+	var path_trash:String = current_directory.plus_file(DNAME_TRASH)
+	
+	if file_path.begins_with(path_trash):
 		var err_msg = "can't recycle recycled %s" % file_path
 		push_error(err_msg)
 		console.err(err_msg)
@@ -710,14 +757,25 @@ func recycle(file_path:String):
 	
 	# is dir?
 	var base_name = file_path.get_file()
-	var new_dir = PATH_TRASH.plus_file(time)
+	var new_dir = path_trash.plus_file(time)
 	var new_path = new_dir.plus_file(base_name)
 	
-	if not d.dir_exists(PATH_TRASH):
-		var _err = d.make_dir(PATH_TRASH)
+	if not d.dir_exists(path_trash):
+		var err = d.make_dir(path_trash)
+		if err != OK:
+			err("can't make dir %s" % path_trash)
+			return
 	
-	var _err = d.make_dir(new_dir)
-	d.rename(file_path, new_path)
+	var err = d.make_dir(new_dir)
+	if err != OK:
+		err("can't make dir %s" % new_dir)
+		return
+	
+	err = d.rename(file_path, new_path)
+	if err != OK:
+		err("can't rename %s to %s" % [file_path, new_path])
+		return
+	
 	save_file(new_dir.plus_file(".old_path"), old_path)
 	save_file(new_dir.plus_file(".new_path"), new_path)
 	
@@ -730,6 +788,10 @@ func recycle(file_path:String):
 		if opened:
 			select_file(opened[-1])
 
+func err(err_msg:String):
+	push_error(err_msg)
+	console.err(err_msg)
+
 func rename_file(old_path:String, new_path:String):
 	if old_path == new_path or not old_path or not new_path:
 		return
@@ -740,12 +802,12 @@ func rename_file(old_path:String, new_path:String):
 		console.err(err_msg)
 		return
 	
-	var selected = get_selected_file()
+	var was_selected = old_path == get_selected_file()
 	if Directory.new().rename(old_path, new_path) == OK:
 		refresh_files()
-		if selected == old_path:
-			_selected_file_changed(new_path)
 		emit_signal("file_renamed", old_path, new_path)
+		if was_selected:
+			_selected_file_changed(new_path)
 	
 	else:
 		var err_msg = "couldn't rename %s to %s." % [old_path, new_path]
@@ -760,14 +822,17 @@ func select_file(file_path:String):
 	if not is_allowed_extension(file_path):
 		return
 	
-	var temp = get_temporary_tab()
-	if temp:
-		if temp.file_path == file_path:
-			temp.temporary = false
-		else:
-			temp.close()
+	if is_opened(file_path):
+		var tab = get_tab(file_path)
+		if tab.temporary:
+			tab.temporary = false
 	
-	if not is_opened(file_path):
+	else:
+		var temp = get_temporary_tab()
+		if temp != null:
+			tab_parent.remove_child(temp)
+			temp.queue_free()
+		
 		open_file(file_path, true)
 	
 	# select current tab
@@ -829,8 +894,12 @@ func show_dir(fname:String, base_dir:String) -> bool:
 	return true
 
 func show_file(fname:String) -> bool:
+	# hidden
 	if fname.begins_with("."):
 		if not show.file.hidden: return false
+	# extensionless
+	if not "." in fname:
+		return show.file.extensionless
 	
 	var ext = get_extension(fname)
 	return exts_enabled.get(ext, false)
@@ -908,11 +977,17 @@ static func get_extension(file_path:String) -> String:
 		return file.split(".", true, 1)[1]
 	return ""
 
+var complained_ext:Array = []
+
 func get_extension_helper(file_path:String) -> TE_ExtensionHelper:
 	var ext:String = get_extension(file_path).replace(".", "_")
 	var ext_path:String = "res://addons/text_editor/ext/ext_%s.gd" % ext
 	if ext in ["cfg", "csv", "ini", "json", "md", "yaml"]:
 		return load(ext_path).new()
 	
-	console.err("no helper %s" % ext_path)
+	# only complain once
+	if not ext in complained_ext:
+		complained_ext.append(ext)
+		console.err("no format helper for '%s' files" % ext)
+	
 	return load("res://addons/text_editor/ext/TE_ExtensionHelper.gd").new()

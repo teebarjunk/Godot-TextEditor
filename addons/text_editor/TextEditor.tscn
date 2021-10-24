@@ -206,7 +206,7 @@ split_offset = -200
 
 [node name="tab_container" type="TabContainer" parent="c/div1/div2/c/c"]
 margin_right = 614.0
-margin_bottom = 562.0
+margin_bottom = 283.0
 size_flags_horizontal = 3
 size_flags_vertical = 3
 custom_fonts/font = ExtResource( 12 )
@@ -218,13 +218,13 @@ __meta__ = {
 }
 
 [node name="meta_tabs" type="TabContainer" parent="c/div1/div2/c/c"]
-visible = false
-margin_top = 288.0
+margin_top = 295.0
 margin_right = 614.0
-margin_bottom = 566.0
+margin_bottom = 562.0
 script = ExtResource( 16 )
 
 [node name="console" type="RichTextLabel" parent="c/div1/div2/c/c/meta_tabs"]
+visible = false
 anchor_right = 1.0
 anchor_bottom = 1.0
 margin_left = 4.0
@@ -265,7 +265,6 @@ bbcode_enabled = true
 script = ExtResource( 9 )
 
 [node name="search" type="VBoxContainer" parent="c/div1/div2/c/c/meta_tabs"]
-visible = false
 anchor_right = 1.0
 anchor_bottom = 1.0
 margin_left = 4.0
@@ -275,16 +274,33 @@ margin_bottom = -4.0
 size_flags_horizontal = 3
 size_flags_vertical = 3
 
-[node name="le" type="LineEdit" parent="c/div1/div2/c/c/meta_tabs/search"]
-margin_right = 58.0
-margin_bottom = 24.0
+[node name="c" type="HBoxContainer" parent="c/div1/div2/c/c/meta_tabs/search"]
+margin_right = 606.0
+margin_bottom = 27.0
+
+[node name="le" type="LineEdit" parent="c/div1/div2/c/c/meta_tabs/search/c"]
+margin_right = 423.0
+margin_bottom = 27.0
 size_flags_horizontal = 3
 custom_fonts/font = ExtResource( 12 )
 
+[node name="all" type="CheckBox" parent="c/div1/div2/c/c/meta_tabs/search/c"]
+margin_left = 427.0
+margin_right = 501.0
+margin_bottom = 27.0
+pressed = true
+text = "all files"
+
+[node name="case" type="CheckBox" parent="c/div1/div2/c/c/meta_tabs/search/c"]
+margin_left = 505.0
+margin_right = 606.0
+margin_bottom = 27.0
+text = "match case"
+
 [node name="rte" type="RichTextLabel" parent="c/div1/div2/c/c/meta_tabs/search"]
-margin_top = 28.0
-margin_right = 58.0
-margin_bottom = 28.0
+margin_top = 31.0
+margin_right = 606.0
+margin_bottom = 231.0
 size_flags_horizontal = 3
 size_flags_vertical = 3
 theme = SubResource( 4 )
@@ -306,17 +322,16 @@ margin_right = -4.0
 margin_bottom = -4.0
 
 [node name="update" type="Button" parent="c/div1/div2/c/c/meta_tabs/sys"]
-margin_right = 12.0
-margin_bottom = 20.0
+margin_right = 606.0
+margin_bottom = 28.0
 size_flags_horizontal = 3
 custom_fonts/font = ExtResource( 12 )
 text = "⟳"
 
 [node name="sys" type="RichTextLabel" parent="c/div1/div2/c/c/meta_tabs/sys"]
-anchor_right = 1.0
-anchor_bottom = 1.0
-margin_right = -8.0
-margin_bottom = -36.0
+margin_top = 32.0
+margin_right = 606.0
+margin_bottom = 232.0
 size_flags_horizontal = 3
 size_flags_vertical = 3
 theme = SubResource( 5 )

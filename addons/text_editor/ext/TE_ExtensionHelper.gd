@@ -9,7 +9,7 @@ func generate_meta(t:TextEdit, r:RichTextLabel):
 	var words = TE_Util.commas(len(t.text.split(" ", false)))
 	var lines = TE_Util.commas(len(TE_Util.split_many(t.text, ".?!\n", false)))
 	var bytes = TE_Util.file_size(t.file_path)
-#	r.add_constant_override("table_hseparation", int(r.rect_size.x / 5.0))
+	
 	r.set_bbcode(r.table([
 		["chars", "words", "lines", "bytes"],
 		[chars, words, lines, bytes]

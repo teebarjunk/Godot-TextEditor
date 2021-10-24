@@ -2,12 +2,16 @@ tool
 extends "res://addons/text_editor/TE_RichTextLabel.gd"
 
 var hscrolls:Dictionary = {}
+var selected_line:int = 0
+var current_file:String = ""
 
 func _ready():
 	var _e
 	_e = editor.connect("symbols_updated", self, "_redraw")
 	_e = editor.connect("tags_updated", self, "_redraw")
 	_e = editor.connect("file_selected", self, "_file_selected")
+	_e = editor.connect("file_closed", self, "_file_closed")
+	_e = editor.connect("file_renamed", self, "_file_renamed")
 	_e = editor.connect("selected_symbol_line", self, "_selected_symbol_line")
 	_e = get_v_scroll().connect("value_changed", self, "_scrolling")
 	
@@ -19,12 +23,24 @@ func _ready():
 	call_deferred("_redraw")
 
 func _selected_symbol_line(line:int):
-#	scroll_to_line(get_line_count()-1)
-	scroll_to_line(line)
+	selected_line = clamp(line, 0, get_line_count())
+	scroll_to_line(clamp(line-1, 0, get_line_count()-1))
+	_redraw()
 
 func _file_selected(file_path:String):
+	current_file = file_path
 	yield(get_tree(), "idle_frame")
 	get_v_scroll().value = hscrolls.get(file_path, 0)
+
+func _file_renamed(old:String, new:String):
+	current_file = new
+	yield(get_tree(), "idle_frame")
+	_redraw()
+
+func _file_closed(file_path:String):
+	if file_path == current_file:
+		current_file = ""
+		_redraw()
 
 func _scrolling(v):
 	hscrolls[editor.get_selected_file()] = get_v_scroll().value
@@ -79,8 +95,9 @@ func _redraw():
 	
 	else:
 		var t = PoolStringArray()
-		
+		var i = -1
 		for line_index in symbols:
+			i += 1
 			if line_index == -1:
 				continue # special file chapter
 			var symbol_info = symbols[line_index]
@@ -102,6 +119,10 @@ func _redraw():
 				cl = cl.darkened(.33 * (deep-1))
 			
 			var tags = "" if not symbol_info.tags else PoolStringArray(symbol_info.tags).join(", ")
-			t.append(clr(meta(space + symbol_info.name, [symbol_info, line_index], tags), cl))
+			var text = clr(meta(space + symbol_info.name, [symbol_info, line_index], tags), cl)
+			if i == selected_line:
+				text = b(u(text))
+			
+			t.append(text)
 		
 		set_bbcode(t.join("\n"))

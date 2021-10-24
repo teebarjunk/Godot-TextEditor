@@ -97,6 +97,7 @@ func table(rows) -> String:
 
 func b(t:String) -> String: return "[b]%s[/b]" % t
 func i(t:String) -> String: return "[i]%s[/i]" % t
+func u(t:String) -> String: return "[u]%s[/u]" % t
 func clr(t:String, c:Color) -> String: return "[color=#%s]%s[/color]" % [c.to_html(), t]
 func center(t:String): return "[center]%s[/center]" % t
 

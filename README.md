@@ -1,22 +1,23 @@
 # Text Editor
-Version `1.6`
+Version `1.7`
 
 ![](README/readme_preview.png)
 
 ***Warning: Use at your own risk. Backup your files before testing.***
 
 # Features
-- Tabs with scroll
-- File filtering
-- Highlighting for common file formats (`md` `json`...)
-- Tag filtering system
+- Multi file tab system.
+- File browser filtering.
+- Highlighting for common formats (`md` `json` `ini`...)
+- Tag system.
 - File Management:
-	- Creation
-	- Renaming
-	- Recycling
+	- Creation.
+	- Renaming.
+	- Recycling.
+	- Moving.
+- Search files.
 - Auto save/load settings
-- Many little *Ease of life* functions:
-	- Folder open/close
+- Many little *Ease of Life* functions:
 	- Comment toggling for:
 		- `.md`: `<!-- -->`
 		- `.json`: `/* */`
@@ -25,17 +26,19 @@ Version `1.6`
 		- `.yaml`: `# `
 
 # Controls
-- `ctrl + N` New file
-- `ctrl + W` Close file
-- `ctrl + shift + W` Open last closed file 
-- `ctrl + tab` Select next open file
-- `ctrl + shift + tab` Select last open file
-- `ctrl + mouse wheel` Adjust font size
-- `ctrl + shift + mouse wheel` Adjust ui font size
-- `ctrl + up` `ctrl + down` Move selected lines
-- `ctrl + /` Toggle line comments
-- `ctrl + M` Toggle file meta info
-- `ctrl + F` Search for text in all files
+- `ctrl + N` New file.
+- `ctrl + W` Close file.
+- `ctrl + shift + W` Open last closed file .
+- `ctrl + tab` Select next open file.
+- `ctrl + shift + tab` Select last open file.
+- `ctrl + mouse wheel` Adjust font size.
+- `ctrl + shift + mouse wheel` Adjust ui font size.
+- `ctrl + up` & `ctrl + down` Move selected lines.
+- `ctrl + /` Toggle line comments.
+- `ctrl + M` Toggle file meta info.
+- `ctrl + F` Search for text in all files.
+- `ctrl + shift + 0-9` Create hotkey for selected file.
+- `ctrl + 0-9` Load hotkeyed file.
 
 ## Symbol View
 - `ctrl + click` Select entire block + children.
@@ -44,9 +47,14 @@ Version `1.6`
 ## Editor View
 - `ctrl + click` anywhere: Scroll to nearest symbol in symbol view.
 - `ctrl + click` inside brackets: Goto local file.
+- `ctrl + shift +`
+	- `U` Make selection uppercase.
+	- `L` Make selection lowercase.
+	- `O` Make selection capitalized.
+	- `P` Make selection variable: `My text -> my_text`
 
 # Symbols and Tags
-*Symbols* are like a Table of Contents for a file.
+*Symbols* are like *Table of Contents* for a file.
 
 - `Markdown` uses headings `# Heading`
 - `JSON` uses Dictionaries `"object": {`
@@ -70,10 +78,14 @@ This will then highlight *Files* and *Symbols* that have that tag.
 # Todo
 - [x] `1.1` Preserve folders open/close state.
 - [x] `1.3` Search all files.
-- [ ] Search file.
+- [x] `1.7` Search file.
 - [ ] Find and replace.
-- [ ] Improve meta data based on format.
+- [x] `1.7` Improve meta data based on format.
 - [x] `1.2` Recycle folders.
-- [x] `1.2` Unrecylce. (Toggle `view/directories/.trash` and press green arrow.
+- [x] `1.2` Unrecylce. (Toggle `view/directories/.trash` and press green arrow.)
 - [ ] JSON formatting.
 - [ ] JSON error testing.
+- [ ] Color themes.
+
+# Mini features
+- Clicking in file will scroll symbol view to the nearest symbol, and display it's name in the tool tip hint.

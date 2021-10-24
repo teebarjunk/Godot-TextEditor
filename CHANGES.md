@@ -1,6 +1,36 @@
+# 1.7
+- Added option to view `Extensionless` files.
+- Added Symbol path heirarchy to hint popup so you know where you are in big files:  
+	![](README/changes_hint_toc.png)
+- `ctrl + shift +`
+	- `U` Make selection uppercase.
+	- `L` Make selection lowercase.
+	- `O` Make selection capitalized.
+	- `P` Make selection variable: `My text -> my_text`
+- Select file shorctut:
+	- `ctrl + shift + 0-9` Remember file.
+	- `ctrl + 0-9` Swap to file.
+- Selected Symbol is now highlighted.
+- Improved meta data for `.md` files.
+- `search` will autoselect term when clicked.
+- `search` `all` toggle added to allow only searching in the selected file.
+- `search` `case` toggle added to allow searching based on upper/lower case.
+- `sys` panel shows unique word list.
+- `sys` panel shows time since modified.
+- Can create a `word_skip_list.txt` in main folder for ignoring certain words from showing in `sys` word list.
+- File List panel hint paths are localized.
+- Removed `.md` function color.
+- Fixed `trash` not working in exported binaries.
+- Fixed dragging files into directory bug.
+- Fixed temporary files not closing properly.
+- Fixed close non existing tab bug.
+- Fixed symbol list not redrawing after file closed.
+- Fixed symbol list not redrawing after file type changed. 
+- Fixed focus not being grabbed when tab selected.
+
 # 1.6
 - Added `Uppercase` `Lowercase` and `Capitalize` option to popup menu for selected text.
-- `ctrl + click` in symbol view selects entire "chapter" and sub "chapters". `ctrl + shift + click` selects only one "chapter".
+- `ctrl + click` in Symbol View selects entire "chapter" and sub "chapters". `ctrl + shift + click` selects only one "chapter".
 - `ctrl + click` in editor will auto scroll symbol view.
 - Folders can be tinted.
 - `word_wrap` state is saved/loaded.

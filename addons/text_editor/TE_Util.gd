@@ -1,5 +1,74 @@
 class_name TE_Util
 
+class Sorter:
+	var d:Dictionary
+	var a:Array = []
+	
+	func _init(dict:Dictionary):
+		d = dict
+		for k in d:
+			a.append([k, d[k]])
+	
+	func on_keys(reverse:bool=false):
+		a.sort_custom(self, "_sort_keys_rev" if reverse else "_sort_keys")
+		return _out()
+	
+	func on_vals(reverse:bool=false):
+		a.sort_custom(self, "_sort_vals_rev" if reverse else "_sort_vals")
+		return _out()
+		
+	func _sort_keys(a, b): return a[0] > b[0]
+	func _sort_keys_rev(a, b): return a[0] < b[0]
+	func _sort_vals(a, b): return a[1] > b[1]
+	func _sort_vals_rev(a, b): return a[1] < b[1]
+	
+	func _out() -> Dictionary:
+		d.clear()
+		for item in a:
+			d[item[0]] = item[1]
+		return d
+
+static func sort_keys(d:Dictionary, reverse:bool=false): return Sorter.new(d).on_keys(reverse)
+static func sort_vals(d:Dictionary, reverse:bool=false): return Sorter.new(d).on_vals(reverse)
+
+static func count_words(text:String, counter:Dictionary, skip_words=null):
+	var word_count:int = 0
+	for sentence in text.split("."):
+		for word in sentence.split(" "):
+			word = _sanitize_word(word)
+			if not word: continue
+			if word in TE_StopWords.STOP_WORDS: continue
+			if skip_words and word in skip_words: continue
+			
+			word_count += 1
+			
+			if not word in counter:
+				counter[word] = 1
+			else:
+				counter[word] += 1
+	
+	return word_count
+
+static func _sanitize_word(word:String):
+	var out = ""
+	var has_letter = false
+	
+	for c in word.to_lower():
+		if c in "abcdefghijklmnopqrstuvwxyz":
+			out += c
+			has_letter = true
+		
+		elif c in "-'0123456789":
+			out += c
+	
+	if not has_letter:
+		return ""
+	
+	if out.ends_with("'s"):
+		return out.substr(0, len(out)-2)
+	
+	return out
+
 static func load_text(path:String) -> String:
 	var f:File = File.new()
 	if f.file_exists(path):

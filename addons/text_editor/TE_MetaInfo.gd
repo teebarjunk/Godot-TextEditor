@@ -17,6 +17,9 @@ func _file_saved(_file_path:String):
 	_redraw()
 
 func _redraw():
+	if not visible:
+		return
+	
 	var tab = editor.get_selected_tab()
 	if tab:
 		tab.helper.generate_meta(tab, self)

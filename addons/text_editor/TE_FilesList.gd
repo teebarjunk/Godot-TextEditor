@@ -56,8 +56,12 @@ func _dir_popup(index:int):
 		file = file.file_path
 	
 	match dir_popup.get_item_text(index):
-		"New File": editor.popup_create_file(file)
-		"Remove": editor.recycle(file)
+		"New File":
+			editor.popup_create_file(file)
+		
+		"Remove":
+			editor.recycle(file, type == "f")
+		
 		"Tint Yellow":
 			selected[1].tint = Color.gold
 			_redraw()
@@ -89,7 +93,7 @@ func _file_popup(index:int):
 		
 		"Remove":
 			if type == "f":
-				editor.recycle(file)
+				editor.recycle(file, true)
 		
 		_:
 			selected = []
@@ -119,9 +123,11 @@ func _input(e:InputEvent):
 				if type in ["f", "d"]:
 					var file_path = file if type == "f" else file.file_path
 					
-					if file_path.begins_with(editor.PATH_TRASH):
-						return # can't move recycling
+					# can't move recycling
+					if editor.is_trash_path(file_path):
+						return
 					
+					# select for drag
 					else:
 						dragging = meta_hovered
 						
@@ -134,9 +140,10 @@ func _input(e:InputEvent):
 					var drag_type = dragging[0]
 					var drag_file = dragging[1]
 					
+					# dragged onto directory?
 					if type == "d":
 						var dir:String = file.file_path
-						var old_path:String = drag_file.file_path
+						var old_path:String = drag_file if drag_type == "f" else drag_file.file_path
 						var new_path:String = dir.plus_file(old_path.get_file())
 						editor.rename_file(old_path, new_path)
 					
@@ -151,7 +158,7 @@ func _input(e:InputEvent):
 						
 						# unrecycle
 						"unrecycle":
-							editor.unrecycle(file)
+							editor.unrecycle(file.file_path)
 						
 						# select
 						"f":
@@ -194,8 +201,8 @@ func _draw_dir(dir:Dictionary, deep:int):
 	var head:String = "▼" if dir.open else "▶"
 	head = clr(space+FOLDER+head, Color.white.darkened(.5))
 	head += " " + b(file.get_file())
-	var link:String = meta(head, ["d", dir], file)
-	if file.begins_with(editor.PATH_TRASH) and file.count("/") == 3:
+	var link:String = meta(head, ["d", dir], editor.get_localized_path(file))
+	if editor.is_trash_path(file):
 		link += " " + meta(clr("⬅", Color.yellowgreen), ["unrecycle", dir], file)
 	lines.append(clr(link, dir.tint.darkened(dimmest)))
 	
@@ -214,7 +221,7 @@ func _draw_dir(dir:Dictionary, deep:int):
 		for i in len(dir.files):
 			var file_path = dir.files[i]
 			file = file_path.get_file()
-			var p = file.split(".", true, 1)
+			var p = [file, ""] if not "." in file else file.split(".", true, 1)
 			file = p[0]
 			var ext = p[1]
 			
@@ -226,11 +233,11 @@ func _draw_dir(dir:Dictionary, deep:int):
 			if "readme" in file.to_lower():
 				head = "🛈"
 			
-			if is_selected:
-				head = "● "
-			
-			elif is_opened:
-				head = "○ "
+#			if is_selected or is_opened:
+#				head = "● "
+#
+#			elif is_opened:
+#				head = "○ "
 			
 			head = clr(head, Color.white.darkened(.5 if is_opened else .75))
 			
@@ -244,6 +251,14 @@ func _draw_dir(dir:Dictionary, deep:int):
 				pass
 					
 			file = clr(file, color)
-			ext = clr("." + ext, Color.white.darkened(.65))
-			var line = space + head + file + ext
-			lines.append(meta(line, ["f", file_path], file_path))
+			ext = "" if not ext else clr("." + ext, Color.white.darkened(.65))
+			
+			var line = file + ext
+			
+			if is_selected:
+				line = u(line)
+			
+#			if is_opened:
+#				line = b(line)
+			
+			lines.append(meta(space + head + line, ["f", file_path], editor.get_localized_path(file_path)))

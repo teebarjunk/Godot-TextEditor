@@ -1,11 +1,131 @@
 tool
 extends TE_ExtensionHelper
 
+func generate_meta(t:TextEdit, r:RichTextLabel):
+	.generate_meta(t, r)
+	
+	var i = 0
+	var meta = {}
+	var words = {}
+	var word_count = 0
+	var chaps = [{i=0, id="???", words={}, word_count=0 }]
+	while i < t.get_line_count():
+		var line = t.get_line(i)
+		
+		# get meta
+		if i == 0 and line.begins_with("---"):
+			i += 1
+			while i < t.get_line_count() and not t.get_line(i).begins_with("---"):
+				if ":" in t.get_line(i):
+					var p = t.get_line(i).split(":", true, 1)
+					var k = p[0].strip_edges()
+					var v = p[1].strip_edges()
+					meta[k] = v
+					if k == "name":
+						chaps[-1].id = v
+				i += 1
+		
+		# ignore comments
+		elif "<!--" in line:
+			pass
+		
+		# ignore tables
+		elif "|" in line:
+			pass
+		
+		# ignore code
+		elif line.begins_with("```") or line.begins_with("~~~"):
+			var head = line.substr(0, 3)
+			i += 1
+			while i < t.get_line_count() and not t.get_line(i).begins_with(head):
+				i += 1
+		
+		# get chapter info
+		elif line.begins_with("#"):
+			var id = line.split(" ", true, 1)[1].strip_edges()
+			chaps.append({i=i, id=id, words={}, word_count=0 })
+			
+		else:
+			var last = chaps[-1]
+			last.word_count += TE_Util.count_words(line, last.words)
+		
+		i += 1
+	
+	# total words
+	for chap in chaps:
+		word_count += chap.word_count
+		for word in chap.words:
+			if not word in words:
+				words[word] = chap.words[word]
+			else:
+				words[word] += chap.words[word]
+		
+		# sort
+		TE_Util.sort_vals(chap.words)
+	
+	r.push_align(RichTextLabel.ALIGN_CENTER)
+	r.push_table(4)
+	for x in ["#", "id", "word %s" % word_count, "words"]:
+		r.push_cell()
+		r.push_bold()
+		r.add_text(x)
+		r.pop()
+		r.pop()
+	
+	var index:int = 0
+	for chap in chaps:
+		
+		if chap.id == "???" and not chap.word_count:
+			continue
+		
+		index += 1
+		
+		
+		
+		r.push_cell()
+		r.push_color(Color.webgray)
+		r.add_text(str(index))
+		r.pop()
+		r.pop()
+		
+		r.push_cell()
+		r.push_color(Color.webgray)
+		r.add_text(chap.id)
+		r.pop()
+		r.pop()
+		
+		var div = 0 if not chap.word_count or not word_count else chap.word_count / float(word_count)
+		div *= 100.0
+		div = "%" + str(stepify(div, .1))
+		r.push_cell()
+		r.push_color(Color.webgray)
+		r.add_text(str(chap.word_count))
+		r.pop()
+		r.push_color(Color.gray)
+		r.add_text(" %s" % div)
+		r.pop()
+		r.pop()
+		
+		r.push_cell()
+		r.push_color(Color.webgray)
+		r.add_text(PoolStringArray(chap.words.keys()).join(" "))
+		r.pop()
+		r.pop()
+		
+	r.pop()
+	r.pop()
+
+func _sort(a, b):
+	return a[1] > b[1]
+
 func toggle_comment(t:TextEdit, head:String="<!-- ", tail:String=" -->"):
 	return .toggle_comment(t, head, tail)
 
 func apply_colors(e:TE_Editor, t:TextEdit):
 	.apply_colors(e, t)
+	
+	t.add_color_override("function_color", e.color_text)
+#	t.add_color_override("background_color", e.color_background)
 	
 	t.add_keyword_color("true", e.color_var)
 	t.add_keyword_color("false", e.color_var)
@@ -58,7 +178,6 @@ func apply_colors(e:TE_Editor, t:TextEdit):
 	
 	# tables
 	t.add_color_region("|", "", Color.tan, true)
-
 
 func get_symbols(t:String) -> Dictionary:
 	var out = .get_symbols(t)

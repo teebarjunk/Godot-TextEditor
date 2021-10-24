@@ -50,10 +50,18 @@ func _ready():
 	popup.add_font_override("font", editor.FONT)
 	
 	popup.add_separator()
-	popup.add_item("Uppercase")
+	popup.add_item("Uppercase", 1000)
+#	var sc = ShortCut.new()
+#	sc.shortcut = InputEventKey.new()
+#	sc.shortcut.shift = true
+#	sc.shortcut.control = true
+#	sc.shortcut.scancode = KEY_U
+#	popup.add_item_shortcut(sc, 1000)
 	popup.add_item("Lowercase")
 	popup.add_item("Capitalize")
 	popup.add_item("Variable")
+	
+#	popup.add_shortcut()
 	_e = popup.connect("index_pressed", self, "_popup_menu")
 	
 	# hint
@@ -69,17 +77,49 @@ func _popup_menu(index:int):
 		"Capitalize": selection_capitalize()
 		"Variable": selection_variable()
 
+var cl
+var cc
+var isa
+var sl1
+var sc1
+var sl2
+var sc2
+
+func _remember_selection():
+	cl = cursor_get_line()
+	cc = cursor_get_column()
+	isa = is_selection_active()
+	if isa:
+		sl1 = get_selection_from_line()
+		sc1 = get_selection_from_column()
+		sl2 = get_selection_to_line()
+		sc2 = get_selection_to_column()
+
+func _remake_selection():
+	cursor_set_line(cl)
+	cursor_set_column(cc)
+	if isa:
+		select(sl1, sc1, sl2, sc2)
+
 func selection_uppercase():
+	_remember_selection()
 	insert_text_at_cursor(get_selection_text().to_upper())
+	_remake_selection()
 
 func selection_lowercase():
+	_remember_selection()
 	insert_text_at_cursor(get_selection_text().to_lower())
+	_remake_selection()
 
 func selection_variable():
+	_remember_selection()
 	insert_text_at_cursor(get_selection_text().to_lower().replace(" ", "_"))
+	_remake_selection()
 
 func selection_capitalize():
+	_remember_selection()
 	insert_text_at_cursor(get_selection_text().capitalize())
+	_remake_selection()
 
 func _node(n):
 	var _e
@@ -131,6 +171,25 @@ func _file_renamed(old_path:String, new_path:String):
 		update_name()
 		update_colors()
 
+func _update_selected_line():
+	var l = cursor_get_line()
+	editor.select_symbol_line(0)
+	
+	var depth = PoolStringArray()
+	for i in len(symbols):
+		var sindex = clamp(i, 0, len(symbols))
+		var symbol = symbols.values()[sindex]
+		while len(depth) <= symbol.deep:
+			depth.append("")
+		
+		depth[symbol.deep] = "  ".repeat(symbol.deep) + symbol.name
+		
+		if i == len(symbols)-1 or symbols.keys()[i+1] > l:
+			editor.select_symbol_line(sindex)
+			depth.resize(symbol.deep+1)
+			hint_tooltip = "[%s]\n%s" % [editor.get_localized_path(file_path), depth.join("\n")]
+			break
+
 func _input(e):
 	if not editor.is_plugin_active():
 		return
@@ -138,20 +197,14 @@ func _input(e):
 	if not visible or not in_focus or not mouse_inside:
 		return
 	
+	# show current position in heirarchy as editor hint
+	if e is InputEventMouseButton and not e.pressed:
+		_update_selected_line()
+	
 	if e is InputEventMouseButton and not e.pressed and e.control:
 		var line:String = get_line(cursor_get_line())
 		
-		# if selecting a symbol, show it in symbol viewer
-		if cursor_get_line() in symbols:
-			editor.select_symbol_line(symbols.keys().find(cursor_get_line())-1)
-		else:
-			var l = cursor_get_line()
-			editor.select_symbol_line(0)
-			for i in len(symbols):
-				if symbols.keys()[i] > l:
-					editor.select_symbol_line(max(0, i-2))
-					break
-		
+		# click link
 		var ca = line.find("(")
 		var cb = line.find_last(")")
 		if ca != -1 and cb != -1:
@@ -205,6 +258,11 @@ func _input(e):
 			for i in len(lines): set_line(f+i, lines[i])
 			select(f+1, 0, t+1, len(get_line(t+1)))
 			cursor_set_line(cursor_get_line()+1, false)
+		
+		if e.scancode == KEY_U: selection_uppercase()
+		if e.scancode == KEY_L: selection_lowercase()
+		if e.scancode == KEY_O: selection_capitalize()
+		if e.scancode == KEY_P: selection_variable()
 
 func _unhandled_key_input(e):
 	if not visible:
@@ -249,11 +307,15 @@ func _file_selected(p:String):
 		if had_selection:
 			select(fl, fc, tl, tc)
 		
+		grab_focus()
+		grab_click_focus()
+		
 
 func goto_line(line:int):
 	# force scroll to bottom so selected line will be at top
 	cursor_set_line(get_line_count())
 	cursor_set_line(line)
+	_update_selected_line()
 
 func text_changed():
 	if last_selected:
