@@ -67,6 +67,12 @@ func _ready():
 	# hint
 	theme = Theme.new()
 	theme.set_font("font", "TooltipLabel", editor.FONT_R)
+#	var sb = StyleBoxFlat.new()
+#	sb.bg_color.a = .75
+#	theme.set_color("font_color", "TooltipLabel", Color(0,0,0,.5))
+#	theme.set_stylebox("panel", "TooltipPanel", sb)
+#	print(theme.get_color_list("TooltipLabel"))
+#	print(theme.get_color_types())
 	
 	TE_Util.dig(self, self, "_node")
 
@@ -309,7 +315,6 @@ func _file_selected(p:String):
 		
 		grab_focus()
 		grab_click_focus()
-		
 
 func goto_line(line:int):
 	# force scroll to bottom so selected line will be at top
@@ -389,6 +394,7 @@ func load_file(path:String):
 	file_path = path
 	if path != "":
 		text = editor.load_file(path)
+	clear_undo_history()
 	update_colors()
 	update_name()
 	
@@ -404,7 +410,7 @@ func _created_nonexisting(fp:String):
 	update_symbols()
 
 func save_file():
-	if file_path == "":
+	if file_path == "" and text:
 		editor.popup_create_file(editor.current_directory, text, funcref(self, "_created_nonexisting"))
 	
 	else:
@@ -424,7 +430,7 @@ func update_name():
 	var n:String
 	
 	if file_path == "":
-		n = "*UNSAVED"
+		n = "UNSAVED"
 	
 	else:
 		n = file_path.get_file().split(".", true, 1)[0]
@@ -453,5 +459,5 @@ func update_heading():
 		OS.set_window_title("%s - Text Editor" % f)
 
 func needs_save() -> bool:
-	return modified or not File.new().file_exists(file_path)
+	return modified or (not File.new().file_exists(file_path) and text)
 

@@ -18,7 +18,10 @@ func _update():
 	
 	# load block list
 	var skip_list = editor.current_directory.plus_file("word_skip_list.txt")
-	skip_words = TE_Util.load_text(skip_list).replace("\n", " ").strip_edges().to_lower().split(" ")
+	if File.new().file_exists(skip_list):
+		skip_words = TE_Util.load_text(skip_list).replace("\n", " ").strip_edges().to_lower().split(" ")
+	else:
+		skip_words = PoolStringArray()
 	
 	for path in editor.file_paths:
 		var file = path.get_file()

@@ -1,3 +1,13 @@
+# 1.8
+- Added filter to symbols list.
+- Added filter to file list.
+- Added `.md` highlighting for `{}`. (Not official Markdown.)
+- Fixed unsaved files asking for a save path if no text entered.
+- Fixed file wiping if hitting undo after loading a file.
+- Fixed *no word_skip_list.txt* error.
+- Folders colorized in file list.
+- Display version at top right.
+
 # 1.7
 - Added option to view `Extensionless` files.
 - Added Symbol path heirarchy to hint popup so you know where you are in big files:  

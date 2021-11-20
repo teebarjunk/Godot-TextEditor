@@ -124,8 +124,10 @@ func toggle_comment(t:TextEdit, head:String="<!-- ", tail:String=" -->"):
 func apply_colors(e:TE_Editor, t:TextEdit):
 	.apply_colors(e, t)
 	
+	var code:Color = TE_Util.hue_shift(e.color_var, .33)#.darkened(.25)
+	var quote:Color = lerp(e.color_text, e.color_symbol, .5)
+	
 	t.add_color_override("function_color", e.color_text)
-#	t.add_color_override("background_color", e.color_background)
 	
 	t.add_keyword_color("true", e.color_var)
 	t.add_keyword_color("false", e.color_var)
@@ -138,10 +140,22 @@ func apply_colors(e:TE_Editor, t:TextEdit):
 	t.add_color_region("*", "*", Color.tomato.lightened(.3), false)
 	
 	# quote
-	t.add_color_region("> ", "", lerp(e.color_text, e.color_symbol, .5), true)
+	t.add_color_region("> ", "", quote, true)
 	
 	# comment
 	t.add_color_region("<!--", "-->", e.color_comment, false)
+	
+	# non official markdown:
+	# formatted
+	t.add_color_region("{", "}", lerp(e.color_text, e.color_var, .5).darkened(.25), false)
+	if false:
+		# quote
+		t.add_color_region('"', '"', quote, false)
+		# brackets
+		t.add_color_region('(', ')', quote, false)
+	else:
+		# url links
+		t.add_color_region("![", ")", e.color_var.lightened(.5))
 	
 	# headings
 	var head = e.color_symbol
@@ -153,16 +167,11 @@ func apply_colors(e:TE_Editor, t:TextEdit):
 		t.add_color_region("%s \"" % h, "\"", tint2, true)
 		t.add_color_region("%s " % h, "*", head, true)
 	
-	# url links
-#	t.add_color_region("[]", ")", e.color_var.lightened(.5))
-	t.add_color_region("![", ")", e.color_var.lightened(.5))
-	
 	# lists
 	t.add_color_region("- [x", "]", Color.yellowgreen, false)
 	t.add_color_region("- [", " ]", e.color_text.darkened(.6), false)
 	
 	# code blocks
-	var code:Color = TE_Util.hue_shift(e.color_var, .33)#.darkened(.25)
 	t.add_color_region("```", "```", code, false)
 	t.add_color_region("~~~", "~~~", code, false)
 	t.add_color_region("---", "---", code, false)
@@ -178,6 +187,8 @@ func apply_colors(e:TE_Editor, t:TextEdit):
 	
 	# tables
 	t.add_color_region("|", "", Color.tan, true)
+	
+	
 
 func get_symbols(t:String) -> Dictionary:
 	var out = .get_symbols(t)

@@ -7,6 +7,8 @@ onready var dir_popup:PopupMenu = $dir_popup
 const DragLabel = preload("res://addons/text_editor/TE_DragLabel.gd")
 var drag_label:RichTextLabel
 
+export var p_filter:NodePath
+var filter:String = ""
 var selected:Array = []
 var dragging:Array = []
 var drag_start:Vector2
@@ -19,6 +21,10 @@ func _ready():
 	_e = editor.connect("file_closed", self, "_file_closed")
 	_e = editor.connect("file_selected", self, "_file_selected")
 	_e = editor.connect("file_renamed", self, "_file_renamed")
+	
+	var le:LineEdit = get_node(p_filter)
+	_e = le.connect("text_changed", self, "_filter_changed")
+	le.add_font_override("font", editor.FONT_R)
 	
 	# file popup
 	file_popup.clear()
@@ -48,6 +54,10 @@ func _ready():
 	add_font_override("bold_font", editor.FONT_B)
 	add_font_override("italics_font", editor.FONT_I)
 	add_font_override("bold_italics_font", editor.FONT_BI)
+
+func _filter_changed(t:String):
+	filter = t
+	_redraw()
 
 func _dir_popup(index:int):
 	var type = selected[0]
@@ -199,7 +209,7 @@ func _draw_dir(dir:Dictionary, deep:int):
 	var space = clr("┃ ".repeat(deep), Color.white.darkened(.8))
 	var file:String = dir.file_path
 	var head:String = "▼" if dir.open else "▶"
-	head = clr(space+FOLDER+head, Color.white.darkened(.5))
+	head = clr(space+FOLDER, Color.gold) + clr(head, Color.white.darkened(.5))
 	head += " " + b(file.get_file())
 	var link:String = meta(head, ["d", dir], editor.get_localized_path(file))
 	if editor.is_trash_path(file):
@@ -230,14 +240,13 @@ func _draw_dir(dir:Dictionary, deep:int):
 			var color = dir.tint
 			head = "┣╸" if i != last else "┗╸"
 			
-			if "readme" in file.to_lower():
-				head = "🛈"
+			var fname_lower = file.to_lower()
 			
-#			if is_selected or is_opened:
-#				head = "● "
-#
-#			elif is_opened:
-#				head = "○ "
+			if filter and not filter in fname_lower:
+				continue
+			
+			if "readme" in fname_lower:
+				head = "🛈"
 			
 			head = clr(head, Color.white.darkened(.5 if is_opened else .75))
 			

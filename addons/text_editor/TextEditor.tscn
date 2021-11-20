@@ -1,4 +1,4 @@
-[gd_scene load_steps=25 format=2]
+[gd_scene load_steps=26 format=2]
 
 [ext_resource path="res://addons/text_editor/TE_Console.gd" type="Script" id=1]
 [ext_resource path="res://addons/text_editor/TE_Editor.gd" type="Script" id=2]
@@ -18,25 +18,27 @@
 [ext_resource path="res://addons/text_editor/TE_MetaTabs.gd" type="Script" id=16]
 [ext_resource path="res://addons/text_editor/TE_ScriptInfo.gd" type="Script" id=17]
 
-[sub_resource type="Theme" id=1]
+[sub_resource type="Theme" id=8]
+
+[sub_resource type="Theme" id=9]
 TooltipLabel/fonts/font = ExtResource( 12 )
 
-[sub_resource type="Theme" id=2]
+[sub_resource type="Theme" id=10]
 TooltipLabel/fonts/font = ExtResource( 12 )
 
-[sub_resource type="Theme" id=3]
+[sub_resource type="Theme" id=11]
 TooltipLabel/fonts/font = ExtResource( 12 )
 
-[sub_resource type="Theme" id=4]
+[sub_resource type="Theme" id=12]
 TooltipLabel/fonts/font = ExtResource( 12 )
 
-[sub_resource type="Theme" id=5]
+[sub_resource type="Theme" id=13]
 TooltipLabel/fonts/font = ExtResource( 12 )
 
-[sub_resource type="Theme" id=6]
+[sub_resource type="Theme" id=14]
 TooltipLabel/fonts/font = ExtResource( 12 )
 
-[sub_resource type="Theme" id=7]
+[sub_resource type="Theme" id=15]
 TooltipLabel/fonts/font = ExtResource( 12 )
 
 [node name="editor" type="Control"]
@@ -59,6 +61,7 @@ margin_right = 214.0
 margin_bottom = 30.0
 size_flags_horizontal = 3
 size_flags_vertical = 3
+theme = SubResource( 8 )
 custom_fonts/font = ExtResource( 14 )
 highlight_current_line = true
 syntax_highlighting = true
@@ -119,6 +122,17 @@ margin_right = 155.0
 margin_bottom = 24.0
 text = "wrap"
 
+[node name="version" type="Label" parent="c/c/c"]
+modulate = Color( 1, 1, 1, 0.521569 )
+margin_left = 159.0
+margin_top = 3.0
+margin_right = 1010.0
+margin_bottom = 20.0
+size_flags_horizontal = 3
+custom_fonts/font = ExtResource( 12 )
+text = "v1.8"
+align = 2
+
 [node name="div1" type="HSplitContainer" parent="c"]
 margin_top = 38.0
 margin_right = 1024.0
@@ -144,12 +158,25 @@ margin_bottom = 555.0
 size_flags_horizontal = 3
 size_flags_vertical = 3
 
-[node name="list_files" type="RichTextLabel" parent="c/div1/c2/c"]
+[node name="c" type="VBoxContainer" parent="c/div1/c2/c"]
 anchor_right = 1.0
 anchor_bottom = 1.0
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="filter" type="LineEdit" parent="c/div1/c2/c/c"]
+margin_right = 192.0
+margin_bottom = 24.0
+clear_button_enabled = true
+
+[node name="list_files" type="RichTextLabel" parent="c/div1/c2/c/c"]
+margin_top = 28.0
+margin_right = 192.0
+margin_bottom = 548.0
 size_flags_horizontal = 3
 size_flags_vertical = 3
-theme = SubResource( 1 )
+theme = SubResource( 9 )
 custom_fonts/bold_italics_font = ExtResource( 13 )
 custom_fonts/italics_font = ExtResource( 10 )
 custom_fonts/bold_font = ExtResource( 11 )
@@ -160,18 +187,19 @@ script = ExtResource( 3 )
 __meta__ = {
 "_edit_use_anchors_": false
 }
+p_filter = NodePath("../filter")
 
-[node name="file_popup" type="PopupMenu" parent="c/div1/c2/c/list_files"]
+[node name="file_popup" type="PopupMenu" parent="c/div1/c2/c/c/list_files"]
 margin_right = 20.0
 margin_bottom = 20.0
 custom_fonts/font = ExtResource( 14 )
 items = [ "Rename", null, 0, false, false, 0, 0, null, "", false, "", null, 0, false, false, -1, 0, null, "", true, "Remove", null, 0, false, false, 2, 0, null, "", false ]
 
-[node name="dir_popup" type="PopupMenu" parent="c/div1/c2/c/list_files"]
+[node name="dir_popup" type="PopupMenu" parent="c/div1/c2/c/c/list_files"]
 margin_right = 20.0
 margin_bottom = 20.0
 custom_fonts/font = ExtResource( 14 )
-items = [ "New File", null, 0, false, false, 0, 0, null, "", false, "", null, 0, false, false, -1, 0, null, "", true, "Remove", null, 0, false, false, 2, 0, null, "", false ]
+items = [ "New File", null, 0, false, false, 0, 0, null, "", false, "", null, 0, false, false, -1, 0, null, "", true, "Remove", null, 0, false, false, 2, 0, null, "", false, "", null, 0, false, false, -1, 0, null, "", true, "Tint Yellow", null, 0, false, false, 4, 0, null, "", false, "Tint Red", null, 0, false, false, 5, 0, null, "", false, "Tint Blue", null, 0, false, false, 6, 0, null, "", false, "Tint Green", null, 0, false, false, 7, 0, null, "", false, "Reset Tint", null, 0, false, false, 8, 0, null, "", false ]
 
 [node name="div2" type="HSplitContainer" parent="c/div1"]
 margin_left = 218.0
@@ -206,7 +234,7 @@ split_offset = -200
 
 [node name="tab_container" type="TabContainer" parent="c/div1/div2/c/c"]
 margin_right = 614.0
-margin_bottom = 283.0
+margin_bottom = 562.0
 size_flags_horizontal = 3
 size_flags_vertical = 3
 custom_fonts/font = ExtResource( 12 )
@@ -218,13 +246,13 @@ __meta__ = {
 }
 
 [node name="meta_tabs" type="TabContainer" parent="c/div1/div2/c/c"]
-margin_top = 295.0
+visible = false
+margin_top = 326.0
 margin_right = 614.0
 margin_bottom = 562.0
 script = ExtResource( 16 )
 
 [node name="console" type="RichTextLabel" parent="c/div1/div2/c/c/meta_tabs"]
-visible = false
 anchor_right = 1.0
 anchor_bottom = 1.0
 margin_left = 4.0
@@ -233,7 +261,7 @@ margin_right = -4.0
 margin_bottom = -4.0
 size_flags_horizontal = 3
 size_flags_vertical = 3
-theme = SubResource( 2 )
+theme = SubResource( 10 )
 custom_fonts/bold_italics_font = ExtResource( 13 )
 custom_fonts/italics_font = ExtResource( 10 )
 custom_fonts/bold_font = ExtResource( 11 )
@@ -241,6 +269,9 @@ custom_fonts/normal_font = ExtResource( 12 )
 bbcode_enabled = true
 meta_underlined = false
 text = "active: False
+active: False
+active: False
+active: False
 active: False
 "
 script = ExtResource( 1 )
@@ -255,7 +286,7 @@ margin_right = -4.0
 margin_bottom = -4.0
 size_flags_horizontal = 3
 size_flags_vertical = 3
-theme = SubResource( 3 )
+theme = SubResource( 11 )
 custom_constants/table_hseparation = 16
 custom_fonts/bold_italics_font = ExtResource( 13 )
 custom_fonts/italics_font = ExtResource( 10 )
@@ -265,6 +296,7 @@ bbcode_enabled = true
 script = ExtResource( 9 )
 
 [node name="search" type="VBoxContainer" parent="c/div1/div2/c/c/meta_tabs"]
+visible = false
 anchor_right = 1.0
 anchor_bottom = 1.0
 margin_left = 4.0
@@ -288,6 +320,7 @@ custom_fonts/font = ExtResource( 12 )
 margin_left = 427.0
 margin_right = 501.0
 margin_bottom = 27.0
+custom_fonts/font = ExtResource( 12 )
 pressed = true
 text = "all files"
 
@@ -295,6 +328,7 @@ text = "all files"
 margin_left = 505.0
 margin_right = 606.0
 margin_bottom = 27.0
+custom_fonts/font = ExtResource( 12 )
 text = "match case"
 
 [node name="rte" type="RichTextLabel" parent="c/div1/div2/c/c/meta_tabs/search"]
@@ -303,7 +337,7 @@ margin_right = 606.0
 margin_bottom = 231.0
 size_flags_horizontal = 3
 size_flags_vertical = 3
-theme = SubResource( 4 )
+theme = SubResource( 12 )
 custom_fonts/bold_italics_font = ExtResource( 13 )
 custom_fonts/italics_font = ExtResource( 10 )
 custom_fonts/bold_font = ExtResource( 11 )
@@ -334,7 +368,7 @@ margin_right = 606.0
 margin_bottom = 232.0
 size_flags_horizontal = 3
 size_flags_vertical = 3
-theme = SubResource( 5 )
+theme = SubResource( 13 )
 custom_constants/table_hseparation = 101
 custom_fonts/bold_italics_font = ExtResource( 13 )
 custom_fonts/italics_font = ExtResource( 10 )
@@ -366,11 +400,26 @@ margin_bottom = 448.0
 size_flags_horizontal = 3
 size_flags_vertical = 3
 
-[node name="list_symbols" type="RichTextLabel" parent="c/div1/div2/c2/c/c"]
+[node name="c" type="VBoxContainer" parent="c/div1/div2/c2/c/c"]
 anchor_right = 1.0
 anchor_bottom = 1.0
+size_flags_horizontal = 3
 size_flags_vertical = 3
-theme = SubResource( 6 )
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="filter" type="LineEdit" parent="c/div1/div2/c2/c/c/c"]
+margin_right = 166.0
+margin_bottom = 24.0
+clear_button_enabled = true
+
+[node name="list_symbols" type="RichTextLabel" parent="c/div1/div2/c2/c/c/c"]
+margin_top = 28.0
+margin_right = 166.0
+margin_bottom = 448.0
+size_flags_vertical = 3
+theme = SubResource( 14 )
 custom_fonts/bold_italics_font = ExtResource( 13 )
 custom_fonts/italics_font = ExtResource( 10 )
 custom_fonts/bold_font = ExtResource( 11 )
@@ -383,6 +432,7 @@ script = ExtResource( 5 )
 __meta__ = {
 "_edit_use_anchors_": false
 }
+p_filter = NodePath("../filter")
 
 [node name="c2" type="Panel" parent="c/div1/div2/c2/c"]
 margin_top = 460.0
@@ -396,7 +446,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 size_flags_horizontal = 3
 size_flags_vertical = 3
-theme = SubResource( 7 )
+theme = SubResource( 15 )
 custom_fonts/bold_italics_font = ExtResource( 13 )
 custom_fonts/italics_font = ExtResource( 10 )
 custom_fonts/bold_font = ExtResource( 11 )

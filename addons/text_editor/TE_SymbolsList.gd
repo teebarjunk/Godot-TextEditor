@@ -5,6 +5,9 @@ var hscrolls:Dictionary = {}
 var selected_line:int = 0
 var current_file:String = ""
 
+var filter:String = ""
+export var p_filter:NodePath
+
 func _ready():
 	var _e
 	_e = editor.connect("symbols_updated", self, "_redraw")
@@ -15,12 +18,20 @@ func _ready():
 	_e = editor.connect("selected_symbol_line", self, "_selected_symbol_line")
 	_e = get_v_scroll().connect("value_changed", self, "_scrolling")
 	
+	var le:LineEdit = get_node(p_filter)
+	_e = le.connect("text_changed", self, "_filter_changed")
+	le.add_font_override("font", editor.FONT_R)
+	
 	add_font_override("normal_font", editor.FONT_R)
 	add_font_override("bold_font", editor.FONT_B)
 	add_font_override("italics_font", editor.FONT_I)
 	add_font_override("bold_italics_font", editor.FONT_BI)
 	
 	call_deferred("_redraw")
+
+func _filter_changed(t:String):
+	filter = t.to_lower()
+	_redraw()
 
 func _selected_symbol_line(line:int):
 	selected_line = clamp(line, 0, get_line_count())
@@ -100,10 +111,14 @@ func _redraw():
 			i += 1
 			if line_index == -1:
 				continue # special file chapter
+			
 			var symbol_info = symbols[line_index]
 			var deep = symbol_info.deep
 			var space = "" if not deep else clr("-".repeat(deep), Color.white.darkened(.75))
 			var cl = Color.white
+			
+			if filter and not filter in symbol_info.name.to_lower():
+				continue
 			
 			if deep == 0:
 				cl = editor.color_symbol
