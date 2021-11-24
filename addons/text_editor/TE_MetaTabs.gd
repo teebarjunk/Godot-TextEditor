@@ -15,5 +15,10 @@ func _unhandled_key_input(e):
 	
 	# Ctrl + M = meta tabs
 	if e.scancode == KEY_M and e.control and e.pressed:
-		visible = not visible
+		get_parent().visible = not get_parent().visible
 		get_tree().set_input_as_handled()
+
+func show_image(file_path:String):
+	get_parent().visible = true
+	current_tab = $image.get_index()
+	$image/image.texture = TE_Util.load_image(file_path)

@@ -28,12 +28,25 @@ const FILE_FILTERS:PoolStringArray = PoolStringArray([
 	"*.yaml ; YAML",
 ])
 
+const DIR_COLORS:Dictionary = {
+	"red": Color.tomato,
+	"yellow": Color.gold,
+	"blue": Color.deepskyblue,
+	"green": Color.chartreuse
+}
+
+func get_tint_color(tint) -> Color:
+	if tint in DIR_COLORS:
+		return DIR_COLORS[tint]
+	return Color.white
+
 signal updated_file_list()
 signal file_opened(file_path)
 signal file_closed(file_path)
 signal file_selected(file_path)
 signal file_saved(file_path)
 signal file_renamed(old_path, new_path)
+signal dir_tint_changed(dir)
 signal symbols_updated()
 signal tags_updated()
 signal save_files()
@@ -80,7 +93,14 @@ onready var line_edit:LineEdit = $c/div1/div2/c/line_edit
 onready var menu_file:MenuButton = $c/c/c/file_button
 onready var menu_view:MenuButton = $c/c/c/view_button
 onready var word_wrap:CheckBox = $c/c/c/word_wrap
-onready var console:RichTextLabel = $c/div1/div2/c/c/meta_tabs/console
+onready var tab_colors:CheckBox = $c/c/c/tab_colors
+
+export var p_console:NodePath
+onready var console:RichTextLabel = get_node(p_console)
+
+export var p_progress_bar:NodePath
+onready var progress_bar:ProgressBar = get_node(p_progress_bar)
+
 var popup_file:PopupMenu
 var popup_view:PopupMenu
 var popup_view_dir:PopupMenu = PopupMenu.new()
@@ -90,15 +110,18 @@ var current_directory:String = "res://"
 var file_list:Dictionary = {}
 var dir_paths:Array = []
 var file_paths:Array = []
+var file_data:Dictionary = {}
 
 var symbols:Dictionary = {}
-var tags:Array = []
-var tags_enabled:Dictionary = {}
-var tag_counts:Dictionary = {}
+var tags_enabled:Array = []
+var tags:Dictionary = {}
 var exts_enabled:Dictionary = {}
 
 var opened:Array = []
 var closed:Array = []
+
+var ignore_head_numbers:bool = true
+var show_tab_color:bool = true
 
 func _ready():
 	console.info("active: %s" % is_plugin_active())
@@ -198,9 +221,72 @@ func _ready():
 	_e = word_wrap.connect("pressed", self, "_toggle_word_wrap")
 	word_wrap.add_font_override("font", FONT_R)
 	
+	# tab colors
+	_e = tab_colors.connect("pressed", self, "_toggle_tab_colors")
+	tab_colors.add_font_override("font", FONT_R)
+	
 	load_state()
 	update_checks()
 	set_directory()
+	
+	file_data.clear()
+	_scanning = true
+	_start_load_at = OS.get_system_time_secs()
+	_files_to_load = get_all_file_paths().duplicate()
+	start_progress(len(_files_to_load))
+	set_process(true)
+
+func start_progress(maxx:int):
+	progress_bar.visible = true
+	progress_bar.value = 0
+	progress_bar.max_value = maxx
+
+var _scanning = true
+var _start_load_at = 0
+var _files_to_load = []
+
+func _process(delta):
+	var time = OS.get_system_time_secs()
+	while _files_to_load:
+		update_file_data(_files_to_load.pop_back())
+		progress_bar.value += 1
+		if OS.get_system_time_secs() - time >= 1:
+			break
+	
+	if not _files_to_load:
+		_scanning = false
+		progress_bar.visible = false
+		set_process(false)
+
+func update_file_data(file_path:String):
+	var helper = get_extension_helper(file_path)
+	var text = TE_Util.load_text(file_path)
+	var symbols = helper.get_symbols(text)
+	var ftags = helper.get_tag_counts(symbols)
+	var f:String = file_path
+	var data = file_data.get(file_path, { icon = "", tint = "", open = false })
+	data.symbols = symbols#helper.get_symbol_names(symbols)
+	data.tags = ftags
+	file_data[file_path] = data
+	
+	tags.clear()
+	for d in file_data.values():
+		for tag in d.tags:
+			if not tag in tags:
+				tags[tag] = d.tags[tag]
+			else:
+				tags[tag] += d.tags[tag]
+	emit_signal("tags_updated")
+
+# "001_file" -> ["001_", "file"]
+func _split_header(fname:String):
+	var out = ["", ""]
+	var i = 0
+	for c in fname:
+		if i == 0 and not c in "0123456789_":
+			i = 1
+		out[i] += c
+	return out
 
 func _toggle_word_wrap():
 	set_word_wrap(word_wrap.pressed)
@@ -209,6 +295,14 @@ func set_word_wrap(ww:bool):
 	tab_prefab.set_wrap_enabled(ww)
 	for tab in get_all_tabs():
 		tab.set_wrap_enabled(ww)
+
+func _toggle_tab_colors():
+	set_tab_colors(tab_colors.pressed)
+
+func set_tab_colors(tc:bool):
+	show_tab_color = tc
+	for tab in get_all_tabs():
+		tab.update_name()
 
 func select_symbol_line(line:int):
 	emit_signal("selected_symbol_line", line)
@@ -252,9 +346,10 @@ func save_state():
 		"tabs": {},
 		"selected": get_selected_file(),
 		"word_wrap": word_wrap.pressed,
+		"ignore_head_numbers": ignore_head_numbers,
+		"show_tab_color": show_tab_color,
 		"show": show,
 		"tags": tags,
-		"tag_counts": tag_counts,
 		"tags_enabled": tags_enabled,
 		"exts_enabled": exts_enabled,
 		"shortcuts": shortcuts,
@@ -275,11 +370,6 @@ func save_state():
 	TE_Util.save_json(current_directory.plus_file(FNAME_STATE), state)
 	emit_signal("state_saved")
 
-func _fix_tint(d:Dictionary):
-	if "tint" in d:
-		var c = d.tint.split_floats(",")
-		d.tint = Color(c[0], c[1], c[2], c[3])
-
 func load_state():
 	var state:Dictionary = TE_Util.load_json(current_directory.plus_file(FNAME_STATE))
 	if not state:
@@ -289,6 +379,17 @@ func load_state():
 	var ww = state.get("word_wrap", word_wrap)
 	word_wrap.pressed = ww
 	set_word_wrap(ww)
+	
+	# show tab color
+	var stc = state.get("show_tab_color", show_tab_color)
+	tab_colors.pressed = stc
+	set_tab_colors(stc)
+	
+	for k in ["ignore_head_numbers"]:
+		if k in state:
+			self[k] = state[k]
+	
+	_load_property(state, "file_list")
 	
 	var selected_file:String
 	for file_path in state.tabs:
@@ -309,10 +410,6 @@ func load_state():
 	for f in [FONT_R, FONT_B, FONT_I, FONT_BI]:
 		f.size = font_size_ui
 	
-	TE_Util.dig(state.file_list, self, "_fix_tint")
-	
-	_load_property(state, "file_list")
-	_load_property(state, "tag_counts")
 	_load_property(state, "tags_enabled")
 	_load_property(state, "exts_enabled")
 	_load_property(state, "shortcuts")
@@ -523,32 +620,41 @@ func _selected_file_changed(file_path:String):
 		emit_signal("file_selected", last_selected_file)
 
 func is_tag_enabled(tag:String) -> bool:
-	return tags_enabled.get(tag, false)
+	return tag in tags_enabled
 
 func enable_tag(tag:String, enabled:bool=true):
-	tags_enabled[tag] = enabled
-	tags.clear()
-	for t in tags_enabled:
-		if tags_enabled[t]:
-			tags.append(t)
+	if enabled:
+		if tag in tags and not tag in tags_enabled:
+			tags_enabled.append(tag)
+	else:
+		if tag in tags_enabled:
+			tags_enabled.erase(tag)
 	emit_signal("tags_updated")
 
 func is_tagged_or_visible(file_tags:Array) -> bool:
-	if not len(tags):
+	if not len(tags_enabled):
 		return true
-	for t in tags:
+	
+	for t in tags_enabled:
 		if not t in file_tags:
 			return false
+	
 	return true
 
 func is_tagged(file_path:String) -> bool:
-	var tab = get_tab(file_path)
-	if tab:
-		return is_tagged_or_visible(tab.tags.keys())
+	# wont work immediately, while files are being scanned
+	if not file_path in file_data:
+		return false
+	return is_tagged_or_visible(file_data[file_path].tags.keys())
+
+func is_dir_tagged(dir:Dictionary) -> bool:
+	for f in dir.files:
+		if is_tagged(f):
+			return true
 	return false
 
 func is_tagging() -> bool:
-	return len(tags) > 0
+	return len(tags_enabled) > 0
 
 func popup_create_file(dir:String=current_directory, text:String="", callback:FuncRef=null):
 	file_dialog.mode = FileDialog.MODE_SAVE_FILE
@@ -628,6 +734,7 @@ func save_file(file_path:String, text:String):
 	var _err = f.open(file_path, File.WRITE)
 	f.store_string(text)
 	f.close()
+	update_file_data(file_path)
 	emit_signal("file_saved", file_path)
 
 func open_last_file():
@@ -683,6 +790,9 @@ func is_allowed_extension(file_path:String) -> bool:
 	var ext = get_extension(file)
 	return ext in MAIN_EXTENSIONS
 
+func is_image(file_path:String) -> bool:
+	return file_path.get_extension().to_lower() in ["png", "jpg", "jpeg", "webp", "bmp"]
+
 func open_file(file_path:String, temporary:bool=false):
 	var tab = get_tab(file_path)
 	if tab:
@@ -691,6 +801,9 @@ func open_file(file_path:String, temporary:bool=false):
 	elif not File.new().file_exists(file_path) and not file_path == "":
 		push_error("no file %s" % file_path)
 		return null
+	
+	elif is_image(file_path) and not file_path == "":
+		$c/div1/div2/c/c/c/meta_tabs.show_image(file_path)
 	
 	elif not is_allowed_extension(file_path) and not file_path == "":
 		push_error("can't open %s" % file_path)
@@ -726,6 +839,7 @@ func unrecycle(file_path:String):
 		d.remove(op)
 		d.remove(np)
 		d.remove(file_path)
+		update_file_data(file_path)
 		refresh_files()
 	else:
 		var err_msg = "can't unrecyle %s" % file_path
@@ -779,6 +893,7 @@ func recycle(file_path:String, is_file:bool):
 	save_file(new_dir.plus_file(".old_path"), old_path)
 	save_file(new_dir.plus_file(".new_path"), new_path)
 	
+	file_data.erase(file_path)
 	refresh_files()
 	
 	if tab:
@@ -804,6 +919,8 @@ func rename_file(old_path:String, new_path:String):
 	
 	var was_selected = old_path == get_selected_file()
 	if Directory.new().rename(old_path, new_path) == OK:
+		file_data[new_path] = file_data[old_path]
+		file_data.erase(old_path)
 		refresh_files()
 		emit_signal("file_renamed", old_path, new_path)
 		if was_selected:
@@ -836,7 +953,8 @@ func select_file(file_path:String):
 		open_file(file_path, true)
 	
 	# select current tab
-	tab_parent.current_tab = get_tab(file_path).get_index()
+	var current = get_tab(file_path)
+	tab_parent.current_tab = current.get_index()
 	_selected_file_changed(file_path)
 
 func set_directory(path:String=current_directory):
@@ -845,19 +963,19 @@ func set_directory(path:String=current_directory):
 	refresh_files()
 
 func _file_symbols_updated(file_path:String):
-	var tg = get_tab(file_path).tags
-	tags_enabled.clear()
-	for tag in tg:
-		if not tag in tags_enabled:
-			tags_enabled[tag] = false
-	
-	tag_counts.clear()
-	for child in get_all_tabs():
-		for t in child.tags:
-			if not t in tag_counts:
-				tag_counts[t] = child.tags[t]
-			else:
-				tag_counts[t] += child.tags[t]
+#	var tg = get_tab(file_path).tags
+#	tags_enabled.clear()
+#	for tag in tg:
+#		if not tag in tags_enabled:
+#			tags_enabled[tag] = false
+#
+#	tag_counts.clear()
+#	for child in get_all_tabs():
+#		for t in child.tags:
+#			if not t in tag_counts:
+#				tag_counts[t] = child.tags[t]
+#			else:
+#				tag_counts[t] += child.tags[t]
 	
 	emit_signal("symbols_updated")
 
@@ -878,8 +996,8 @@ func refresh_files():
 		var err_msg = "error trying to load %s: %s" % [current_directory, err]
 		push_error(err_msg)
 		console.err(err_msg)
-		
-func show_dir(fname:String, base_dir:String) -> bool:
+
+func _can_show_dir(fname:String, base_dir:String) -> bool:
 	if not show.dir.gdignore and File.new().file_exists(base_dir.plus_file(".gdignore")):
 		return false
 	
@@ -893,7 +1011,7 @@ func show_dir(fname:String, base_dir:String) -> bool:
 	
 	return true
 
-func show_file(fname:String) -> bool:
+func _can_show_file(fname:String) -> bool:
 	# hidden
 	if fname.begins_with("."):
 		if not show.file.hidden: return false
@@ -903,6 +1021,26 @@ func show_file(fname:String) -> bool:
 	
 	var ext = get_extension(fname)
 	return exts_enabled.get(ext, false)
+
+func get_dir_info(path:String) -> Dictionary:
+	return TE_Util.dig_for(file_list, "file_path", path)
+
+var all_file_paths:Array = []
+func get_all_file_paths():
+	all_file_paths.clear()
+	TE_Util.dig(file_list, self, "_get_all_file_paths")
+	return all_file_paths
+	
+func _get_all_file_paths(d:Dictionary):
+	if "files" in d:
+		all_file_paths.append_array(d.files)
+
+func get_file_tint_name(fpath:String) -> String:
+	var bdir = fpath.get_base_dir()
+	var dir = get_dir_info(bdir)
+	if dir:
+		return dir.tint
+	return ""
 
 func _scan_dir(id:String, path:String, dir:Directory, last_dir:Dictionary, old_last_dir:Dictionary):
 	var _e = dir.list_dir_begin(true, false)
@@ -916,7 +1054,7 @@ func _scan_dir(id:String, path:String, dir:Directory, last_dir:Dictionary, old_l
 		dirs=a_dirs,
 		show=true,
 		open=old_last_dir.get("open", true),
-		tint=old_last_dir.get("tint", Color.white)
+		tint=old_last_dir.get("tint", Color.white),
 	}
 	last_dir[id] = info
 	
@@ -926,13 +1064,13 @@ func _scan_dir(id:String, path:String, dir:Directory, last_dir:Dictionary, old_l
 		var file_path = dir.get_current_dir().plus_file(fname)
 		
 		if dir.current_is_dir():
-			if show_dir(fname, file_path):
+			if _can_show_dir(fname, file_path):
 				var sub_dir = Directory.new()
 				sub_dir.open(file_path)
 				_scan_dir(fname, file_path, sub_dir, a_dirs_and_files, old_last_dir.get("all", {}).get(fname, {}))
 		
 		else:
-			if show_file(fname):
+			if _can_show_file(fname):
 				a_dirs_and_files[fname] = file_path
 		
 		fname = dir.get_next()
@@ -982,7 +1120,7 @@ var complained_ext:Array = []
 func get_extension_helper(file_path:String) -> TE_ExtensionHelper:
 	var ext:String = get_extension(file_path).replace(".", "_")
 	var ext_path:String = "res://addons/text_editor/ext/ext_%s.gd" % ext
-	if ext in ["cfg", "csv", "ini", "json", "md", "yaml"]:
+	if ext in ["cfg", "csv", "ini", "json", "md", "yaml", "txt"]:
 		return load(ext_path).new()
 	
 	# only complain once

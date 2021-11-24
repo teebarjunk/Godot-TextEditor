@@ -1,3 +1,16 @@
+# 1.9
+- Tag Viewer now shows all tags regardless of whether the file is open or not.
+- File View can show symbols. Toggle with `ctrl` click.
+- File View filter will scan symbols as well.
+- File List dims characters `0123456789-_`.
+- Image Preview on `ctrl + click` in Markdown: `![](icon.png)` will display `"res://icon.png"`
+- Tab title ignores leading numbers: "001_character" = "character"
+- Directories are highlighted if they have a file with a selected tag.
+- Holding `ctrl` while selecting a tag allows multiple to be selected.
+- Added tab icon based on folder color.
+- Fixed Markdown symbol generator including `#` inside code.
+- Fixed meta container resizing.
+
 # 1.8
 - Added filter to symbols list.
 - Added filter to file list.

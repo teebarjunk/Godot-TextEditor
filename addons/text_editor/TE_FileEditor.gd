@@ -18,6 +18,8 @@ var last_shift:bool
 var last_selected:bool
 var last_selection:Array = [0, 0, 0, 0]
 
+var color:String = ""
+
 var hscroll:int = 0
 var vscroll:int = 0
 var in_focus:bool = false
@@ -35,6 +37,7 @@ func _ready():
 	_e = editor.connect("save_files", self, "save_file")
 	_e = editor.connect("file_selected", self, "_file_selected")
 	_e = editor.connect("file_renamed", self, "_file_renamed")
+	_e = editor.connect("dir_tint_changed", self, "_dir_tint_changed")
 	_e = connect("text_changed", self, "text_changed")
 	_e = connect("focus_entered", self, "set", ["in_focus", true])
 	_e = connect("focus_exited", self, "set", ["in_focus", false])
@@ -75,6 +78,10 @@ func _ready():
 #	print(theme.get_color_types())
 	
 	TE_Util.dig(self, self, "_node")
+
+func _dir_tint_changed(dir:String):
+	if file_path.get_base_dir() == dir:
+		update_name()
 
 func _popup_menu(index:int):
 	match get_menu().get_item_text(index):
@@ -316,6 +323,11 @@ func _file_selected(p:String):
 		grab_focus()
 		grab_click_focus()
 
+func goto_symbol(index:int):
+	var syms = symbols.keys()
+	if syms and index >= 0 and index < len(syms):
+		goto_line(syms[index])
+
 func goto_line(line:int):
 	# force scroll to bottom so selected line will be at top
 	cursor_set_line(get_line_count())
@@ -434,15 +446,28 @@ func update_name():
 	
 	else:
 		n = file_path.get_file().split(".", true, 1)[0]
+		
+		if editor.ignore_head_numbers:
+			n = editor._split_header(n)[1]
+		
 		if temporary: n = "?" + n
 		if modified: n = "*" + n
 	
 	if len(n) > 12:
 		n = n.substr(0, 9) + "..."
 	
+	if editor.show_tab_color:
+		var color = editor.get_file_tint_name(file_path)
+		var path = "res://addons/text_editor/icons/icon_%s.png" % color
+		if File.new().file_exists(path):
+			editor.tab_parent.set_tab_icon(get_index(), load(path))
+		else:
+			editor.tab_parent.set_tab_icon(get_index(), null)
+	else:
+		editor.tab_parent.set_tab_icon(get_index(), null)
+	
 	editor.tab_parent.set_tab_title(get_index(), n)
 	editor.tab_parent.get_tab_control(get_index()).hint_tooltip = file_path
-	update_heading()
 
 func update_heading():
 	if Engine.editor_hint:

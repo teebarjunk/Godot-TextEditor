@@ -73,19 +73,24 @@ func _dir_popup(index:int):
 			editor.recycle(file, type == "f")
 		
 		"Tint Yellow":
-			selected[1].tint = Color.gold
+			selected[1].tint = "yellow"#Color.gold
+			editor.emit_signal("dir_tint_changed", selected[1].file_path)
 			_redraw()
 		"Tint Red":
-			selected[1].tint = Color.tomato
+			selected[1].tint = "red"#Color.tomato
+			editor.emit_signal("dir_tint_changed", selected[1].file_path)
 			_redraw()
 		"Tint Blue":
-			selected[1].tint = Color.deepskyblue
+			selected[1].tint = "blue"#Color.deepskyblue
+			editor.emit_signal("dir_tint_changed", selected[1].file_path)
 			_redraw()
 		"Tint Green":
-			selected[1].tint = Color.chartreuse
+			selected[1].tint = "green"#Color.chartreuse
+			editor.emit_signal("dir_tint_changed", selected[1].file_path)
 			_redraw()
 		"Reset Tint":
-			selected[1].tint = Color.white
+			selected[1].tint = ""#Color.white
+			editor.emit_signal("dir_tint_changed", selected[1].file_path)
 			_redraw()
 
 func _file_popup(index:int):
@@ -128,51 +133,67 @@ func _input(e:InputEvent):
 		var file = meta_hovered[1]
 		
 		if e.button_index == BUTTON_LEFT:
-			
 			if e.pressed:
 				if type in ["f", "d"]:
-					var file_path = file if type == "f" else file.file_path
 					
-					# can't move recycling
-					if editor.is_trash_path(file_path):
-						return
+					if type == "f" and Input.is_key_pressed(KEY_CONTROL):
+						editor.file_data[file].open = not editor.file_data[file].open
+						_redraw()
 					
-					# select for drag
 					else:
-						dragging = meta_hovered
+						var file_path = file if type == "f" else file.file_path
 						
-						drag_label = DragLabel.new(file_path.get_file())
-						drag_label.editor = editor
-						editor.add_child(drag_label)
+						# can't move recycling
+						if editor.is_trash_path(file_path):
+							return
+						
+						# select for drag
+						else:
+							dragging = meta_hovered
+							
+							drag_label = DragLabel.new(file_path.get_file())
+							drag_label.editor = editor
+							editor.add_child(drag_label)
 			
 			else:
-				if dragging and dragging != meta_hovered:
-					var drag_type = dragging[0]
-					var drag_file = dragging[1]
-					
-					# dragged onto directory?
-					if type == "d":
-						var dir:String = file.file_path
-						var old_path:String = drag_file if drag_type == "f" else drag_file.file_path
-						var new_path:String = dir.plus_file(old_path.get_file())
-						editor.rename_file(old_path, new_path)
-					
-					dragging = []
+				if type == "f" and Input.is_key_pressed(KEY_CONTROL):
+					pass
 				
 				else:
-					match type:
-						# toggle directory
-						"d":
-							file.open = not file.open
-							_redraw()
+					if dragging and dragging != meta_hovered:
+						var drag_type = dragging[0]
+						var drag_file = dragging[1]
 						
-						# unrecycle
-						"unrecycle":
-							editor.unrecycle(file.file_path)
+						# dragged onto directory?
+						if type == "d":
+							var dir:String = file.file_path
+							var old_path:String = drag_file if drag_type == "f" else drag_file.file_path
+							var new_path:String = dir.plus_file(old_path.get_file())
+							editor.rename_file(old_path, new_path)
 						
-						# select
-						"f":
-							editor.select_file(file)
+						dragging = []
+					
+					else:
+						match type:
+							# toggle directory
+							"d":
+								file.open = not file.open
+								_redraw()
+							
+							# unrecycle
+							"unrecycle":
+								editor.unrecycle(file.file_path)
+							
+							# select
+							"f":
+								editor.select_file(file)
+							
+							# select file symbol
+							"fs":
+								editor.select_file(file)
+								var tab = editor.get_selected_tab()
+								yield(get_tree(), "idle_frame")
+								tab.goto_symbol(meta_hovered[2])
 				
 			get_tree().set_input_as_handled()
 		
@@ -201,20 +222,37 @@ func _redraw():
 	_draw_dir(editor.file_list[""], 0)
 	set_bbcode(lines.join("\n"))
 
+func _dull_nonwords(s:String, clr:Color, dull:Color) -> String:
+	var on = false
+	var parts = []
+	for c in s:
+		on = c in "0123456789_-"
+		if not parts or parts[-1][0] != on:
+			parts.append([on, ""])
+		parts[-1][1] += c
+	var out = ""
+	for p in parts:
+		out += clr(p[1], dull if p[0] else clr)
+	return out
+
 const FOLDER:String = "🗀" # not visible in godot
 func _draw_dir(dir:Dictionary, deep:int):
 	var is_tagging = editor.is_tagging()
 	var dimmest:float = .5 if is_tagging else 0.0
+	var tint = editor.get_tint_color(dir.tint)
+	var dull = Color.white.darkened(.65)
+	var dull_tint = tint.darkened(.5)
 	
 	var space = clr("┃ ".repeat(deep), Color.white.darkened(.8))
 	var file:String = dir.file_path
 	var head:String = "▼" if dir.open else "▶"
 	head = clr(space+FOLDER, Color.gold) + clr(head, Color.white.darkened(.5))
-	head += " " + b(file.get_file())
+	head += " " + b(_dull_nonwords(file.get_file(), tint.darkened(0 if editor.is_dir_tagged(dir) else 0.5), dull))
 	var link:String = meta(head, ["d", dir], editor.get_localized_path(file))
 	if editor.is_trash_path(file):
 		link += " " + meta(clr("⬅", Color.yellowgreen), ["unrecycle", dir], file)
-	lines.append(clr(link, dir.tint.darkened(dimmest)))
+	
+	lines.append(link)
 	
 	var sel = editor.get_selected_tab()
 	sel = sel.file_path if sel else ""
@@ -237,37 +275,54 @@ func _draw_dir(dir:Dictionary, deep:int):
 			
 			var is_selected = file_path == sel
 			var is_opened = editor.is_opened(file_path)
-			var color = dir.tint
+			var color = tint
 			head = "┣╸" if i != last else "┗╸"
 			
 			var fname_lower = file.to_lower()
-			
-			if filter and not filter in fname_lower:
-				continue
 			
 			if "readme" in fname_lower:
 				head = "🛈"
 			
 			head = clr(head, Color.white.darkened(.5 if is_opened else .75))
 			
+			var bold = false
 			if is_tagging:
 				if editor.is_tagged(file_path):
-					file = b(file)
-					
+					bold = true
+				
 				else:
 					color = color.darkened(dimmest)
 			else:
 				pass
-					
-			file = clr(file, color)
-			ext = "" if not ext else clr("." + ext, Color.white.darkened(.65))
+			
+			file = _dull_nonwords(file, color, dull)
+			
+			if bold:
+				file = b(file)
+			
+			ext = "" if not ext else clr("." + ext, dull)
 			
 			var line = file + ext
 			
 			if is_selected:
 				line = u(line)
 			
-#			if is_opened:
-#				line = b(line)
+			var hint_path = editor.get_localized_path(file_path)
+			var symbol_lines = []
 			
-			lines.append(meta(space + head + line, ["f", file_path], editor.get_localized_path(file_path)))
+			if not editor._scanning:
+				var fdata = editor.file_data[file_path]
+				var symbols = fdata.symbols.values()
+				for j in range(1, len(symbols)):
+					if fdata.open or filter:
+						var sdata = symbols[j]
+						var sname = sdata.name
+						if filter and not filter in sname.to_lower():
+							continue
+						var s = "  ".repeat(sdata.deep) + clr("  %s) " % [j], dull) + clr(sname, dull_tint)
+						var h = hint_path + " #" + sname
+						symbol_lines.append(meta(space + s, ["fs", file_path, j], h))
+			
+			if symbol_lines or not (filter and not filter in fname_lower):
+				lines.append(meta(space + head + line, ["f", file_path], hint_path))
+				lines.append_array(symbol_lines)

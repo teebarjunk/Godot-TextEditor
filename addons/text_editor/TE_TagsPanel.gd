@@ -16,18 +16,15 @@ func _ready():
 	theme.set_font("font", "TooltipLabel", editor.FONT_R)
 	
 	call_deferred("_redraw")
-#
-#func _hovered(index):
-#	var tag = tag_indices[int(index)]
-#	var count = editor.tag_counts[tag]
-#	hint_tooltip = 
-
-#func _unhover(t):
-#	hint_tooltip = ""
 
 func _clicked(args:Array):
 	var tag = args[0]
-	editor.enable_tag(tag, not editor.is_tag_enabled(tag))
+	var was_enabled = editor.is_tag_enabled(tag)
+	
+	if not Input.is_key_pressed(KEY_CONTROL):
+		editor.tags_enabled.clear()
+	
+	editor.enable_tag(tag, not was_enabled)
 
 func sort_tags(tags:Dictionary):
 	var sorter:Array = []
@@ -46,7 +43,7 @@ func _sort_tags(a, b):
 
 func _redraw():
 	var tab = editor.get_selected_tab()
-	var tags = editor.tag_counts
+	var tags = editor.tags
 	var tab_tags = {} if not tab else tab.tags
 	
 	sort_tags(tags)
@@ -59,7 +56,7 @@ func _redraw():
 		var count_color1 = Color.tomato.to_html()
 		var count_color2 = Color.tomato.darkened(.75).to_html()
 		for tag in tags:
-			var count = editor.tag_counts[tag]
+			var count = editor.tags[tag]
 			var enabled = editor.is_tag_enabled(tag)
 			
 			var x = tag

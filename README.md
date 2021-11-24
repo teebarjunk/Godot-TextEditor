@@ -1,5 +1,5 @@
 # Text Editor
-Version `1.8`
+Version `1.9`
 
 ![](README/readme_preview.png)
 
@@ -16,7 +16,8 @@ Version `1.8`
 	- Recycling.
 	- Moving.
 - Search files.
-- Auto save/load settings
+- Image previews.
+- Auto save/load settings.
 - Many little *Ease of Life* functions:
 	- Comment toggling for:
 		- `.md`: `<!-- -->`
@@ -89,3 +90,4 @@ This will then highlight *Files* and *Symbols* that have that tag.
 
 # Mini features
 - Clicking in file will scroll symbol view to the nearest symbol, and display it's name in the tool tip hint.
+- `ctrl` click in File View to toggle it's symbol list.

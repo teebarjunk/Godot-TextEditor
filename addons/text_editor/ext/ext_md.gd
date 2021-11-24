@@ -124,7 +124,7 @@ func toggle_comment(t:TextEdit, head:String="<!-- ", tail:String=" -->"):
 func apply_colors(e:TE_Editor, t:TextEdit):
 	.apply_colors(e, t)
 	
-	var code:Color = TE_Util.hue_shift(e.color_var, .33)#.darkened(.25)
+	var code:Color = lerp(Color.white.darkened(.5), Color.deepskyblue, .333)
 	var quote:Color = lerp(e.color_text, e.color_symbol, .5)
 	
 	t.add_color_override("function_color", e.color_text)
@@ -187,8 +187,6 @@ func apply_colors(e:TE_Editor, t:TextEdit):
 	
 	# tables
 	t.add_color_region("|", "", Color.tan, true)
-	
-	
 
 func get_symbols(t:String) -> Dictionary:
 	var out = .get_symbols(t)
@@ -212,6 +210,12 @@ func get_symbols(t:String) -> Dictionary:
 				
 				i += 1
 #			i += 1
+		
+		elif lines[i].begins_with("```") or lines[i].begins_with("~~~"):
+			var head = lines[i].substr(0, 3)
+			i += 1
+			while i < len(lines) and not lines[i].begins_with(head):
+				i += 1
 		
 		# symbols
 		elif lines[i].begins_with("#"):

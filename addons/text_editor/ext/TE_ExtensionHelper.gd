@@ -68,6 +68,23 @@ func get_symbols(t:String) -> Dictionary:
 	symbols = {}
 	return symbols
 
+#func get_symbol_names(s:Dictionary):
+#	var out = []
+#	for k in s:
+#		if k != -1:
+#			out.append(s[k].name)
+#	return out
+	
+func get_tag_counts(s:Dictionary) -> Dictionary:
+	var out = {}
+	for k in s:
+		for tag in s[k].tags:
+			if not tag in out:
+				out[tag] = 1
+			else:
+				out[tag] += 1
+	return out
+
 func apply_colors(e, t:TextEdit):
 	t.add_color_override("font_color", e.color_text)
 	t.add_color_override("number_color", e.color_var)

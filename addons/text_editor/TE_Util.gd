@@ -90,6 +90,16 @@ static func load_json(path:String, loud:bool=false) -> Dictionary:
 		push_error("no json at \"%s\"" % path)
 	return {}
 
+static func load_image(path:String) -> ImageTexture:
+	var f:File = File.new()
+	if f.file_exists(path):
+		var image:Image = Image.new()
+		image.load(path)
+		var texture:ImageTexture = ImageTexture.new()
+		texture.create_from_image(image)
+		return texture
+	return null
+
 static func save_json(path:String, data:Dictionary):
 	var f:File = File.new()
 	f.open(path, File.WRITE)
@@ -126,23 +136,55 @@ static func get_whitespace_tail(t:String):
 	var length = len(t) - len(t.strip_edges(false, true))
 	return t.substr(len(t)-length)
 
-static func dig(d, obj:Object, fname:String):
-	var f = funcref(obj, fname)
-	if d is Dictionary:
-		_dig_dict(d, f)
-	elif d is Node:
-		_dig_node(d, f)
+const _dig = {depth=0}
 
-static func _dig_dict(d:Dictionary, f:FuncRef):
+static func get_dig_depth() -> int:
+	return _dig.depth
+
+static func dig_for(d, property:String, value):
+	var depth:int = 0
+	if d is Dictionary:
+		return _dig_for_dict(d, property, value, depth)
+#	elif d is Node:
+#		return _dig_for_node(d, propert, value, depth)
+	return null
+
+static func _dig_for_dict(d:Dictionary, property:String, value, depth:int):
+	_dig.depth = depth
+	if property in d and d[property] == value:
+		return d
+	for k in d:
+		if d[k] is Dictionary:
+			var got = _dig_for_dict(d[k], property, value, depth+1)
+			if got != null:
+				return got
+	return null
+#static func _dig_for_node(d:Node, f:FuncRef, depth:int):
+#	_dig.depth = depth
+#	f.call_func(d)
+#	for i in d.get_child_count():
+#		_dig_node(d.get_child(i), f, depth+1)
+
+static func dig(d, obj:Object, fname:String):
+	var f:FuncRef = funcref(obj, fname)
+	var depth:int = 0
+	if d is Dictionary:
+		_dig_dict(d, f, depth)
+	elif d is Node:
+		_dig_node(d, f, depth)
+
+static func _dig_dict(d:Dictionary, f:FuncRef, depth:int):
+	_dig.depth = depth
 	f.call_func(d)
 	for k in d:
 		if d[k] is Dictionary:
-			_dig_dict(d[k], f)
+			_dig_dict(d[k], f, depth+1)
 
-static func _dig_node(d:Node, f:FuncRef):
+static func _dig_node(d:Node, f:FuncRef, depth:int):
+	_dig.depth = depth
 	f.call_func(d)
 	for i in d.get_child_count():
-		_dig_node(d.get_child(i), f)
+		_dig_node(d.get_child(i), f, depth+1)
 
 static func file_size(path:String) -> String:
 	var f:File = File.new()
