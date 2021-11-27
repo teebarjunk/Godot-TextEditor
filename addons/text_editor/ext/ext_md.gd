@@ -128,9 +128,10 @@ func apply_colors(e:TE_Editor, t:TextEdit):
 	var quote:Color = lerp(e.color_text, e.color_symbol, .5)
 	
 	t.add_color_override("function_color", e.color_text)
+	t.add_color_override("number_color", e.color_text)
 	
-	t.add_keyword_color("true", e.color_var)
-	t.add_keyword_color("false", e.color_var)
+#	t.add_keyword_color("true", e.color_var)
+#	t.add_keyword_color("false", e.color_var)
 	
 	# bold italic
 	t.add_color_region("***", "***", Color.tomato.darkened(.3), false)
@@ -148,6 +149,8 @@ func apply_colors(e:TE_Editor, t:TextEdit):
 	# non official markdown:
 	# formatted
 	t.add_color_region("{", "}", lerp(e.color_text, e.color_var, .5).darkened(.25), false)
+#	t.add_color_region("[", "]", lerp(e.color_text, e.color_var, .5).darkened(.25), false)
+#	t.add_color_region("(", ")", lerp(e.color_text, e.color_var, .5).darkened(.25), false)
 	if false:
 		# quote
 		t.add_color_region('"', '"', quote, false)
@@ -158,14 +161,11 @@ func apply_colors(e:TE_Editor, t:TextEdit):
 		t.add_color_region("![", ")", e.color_var.lightened(.5))
 	
 	# headings
-	var head = e.color_symbol
-	var tint1 = TE_Util.hue_shift(head, -.33)
-	var tint2 = TE_Util.hue_shift(head, .33)
-	for i in range(1, 6):
+	for i in range(1, 7):
 		var h = "#".repeat(i)
-		t.add_color_region("%s *" % h, "*", tint1, true)
-		t.add_color_region("%s \"" % h, "\"", tint2, true)
-		t.add_color_region("%s " % h, "*", head, true)
+		t.add_color_region("%s *" % h, "*", e.get_symbol_color(i-1, -.33), true)
+		t.add_color_region("%s \"" % h, "\"", e.get_symbol_color(i-1, .33), true)
+		t.add_color_region("%s " % h, "*", e.get_symbol_color(i-1), true)
 	
 	# lists
 	t.add_color_region("- [x", "]", Color.yellowgreen, false)

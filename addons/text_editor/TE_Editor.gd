@@ -83,28 +83,35 @@ var color_tag:Color = Color.yellow
 var color_var:Color = Color.orange
 var color_varname:Color = color_text.darkened(.25)
 
+export var p_tab_parent:NodePath
+export var p_tab_prefab:NodePath
+export var p_console:NodePath
+export var p_progress_bar:NodePath
+
+onready var tab_parent:TabContainer = get_node(p_tab_parent)
+onready var tab_prefab:Node = get_node(p_tab_prefab)
+onready var console:RichTextLabel = get_node(p_console)
+onready var progress_bar:ProgressBar = get_node(p_progress_bar)
+
+export var p_menu_file:NodePath
+export var p_menu_view:NodePath
+export var p_menu_insert:NodePath
+onready var menu_file:MenuButton = get_node(p_menu_file)
+onready var menu_view:MenuButton = get_node(p_menu_view)
+onready var menu_insert:MenuButton = get_node(p_menu_insert)
+var popup_file:PopupMenu
+var popup_view:PopupMenu
+var popup_insert:PopupMenu
+var popup_view_dir:PopupMenu = PopupMenu.new()
+var popup_view_file:PopupMenu = PopupMenu.new()
+
 onready var test_button:Node = $c/c/c/test
-onready var tab_parent:TabContainer = $c/div1/div2/c/c/tab_container
-onready var tab_prefab:Node = $file_editor
 onready var popup:ConfirmationDialog = $popup
 onready var popup_unsaved:ConfirmationDialog = $popup_unsaved
 onready var file_dialog:FileDialog = $file_dialog
 onready var line_edit:LineEdit = $c/div1/div2/c/line_edit
-onready var menu_file:MenuButton = $c/c/c/file_button
-onready var menu_view:MenuButton = $c/c/c/view_button
 onready var word_wrap:CheckBox = $c/c/c/word_wrap
 onready var tab_colors:CheckBox = $c/c/c/tab_colors
-
-export var p_console:NodePath
-onready var console:RichTextLabel = get_node(p_console)
-
-export var p_progress_bar:NodePath
-onready var progress_bar:ProgressBar = get_node(p_progress_bar)
-
-var popup_file:PopupMenu
-var popup_view:PopupMenu
-var popup_view_dir:PopupMenu = PopupMenu.new()
-var popup_view_file:PopupMenu = PopupMenu.new()
 
 var current_directory:String = "res://"
 var file_list:Dictionary = {}
@@ -149,7 +156,7 @@ func _ready():
 	btn.connect("pressed", popup_unsaved, "hide")
 	TE_Util.dig(popup_unsaved, self, "_apply_fonts")
 	
-	# menu
+	# menu: file
 	menu_file.add_font_override("font", FONT_R)
 	popup_file = menu_file.get_popup()
 	popup_file.clear()
@@ -159,7 +166,7 @@ func _ready():
 	popup_file.add_item("Open last closed", 300)
 	_e = popup_file.connect("index_pressed", self, "_menu_file")
 	
-	# view
+	# menu: view
 	menu_view.add_font_override("font", FONT_R)
 	popup_view = menu_view.get_popup()
 	popup_view.clear()
@@ -209,6 +216,15 @@ func _ready():
 	popup_view.add_submenu_item("Files", "Files")
 	_e = popup_view_file.connect("index_pressed", self, "_menu_view_file")
 	
+	# menu: insert
+	menu_insert.add_font_override("font", FONT_R)
+	popup_insert = menu_insert.get_popup()
+	popup_insert.clear()
+	popup_insert.add_font_override("font", FONT_R)
+	popup_insert.add_item("Date")
+	popup_insert.add_item("Words Typed")
+	_e = popup_insert.connect("index_pressed", self, "_menu_insert")
+	
 	# file dialog
 	_e = file_dialog.connect("file_selected", self, "_file_dialog_file")
 	file_dialog.add_font_override("title_font", FONT_R)
@@ -232,9 +248,24 @@ func _ready():
 	file_data.clear()
 	_scanning = true
 	_start_load_at = OS.get_system_time_secs()
-	_files_to_load = get_all_file_paths().duplicate()
+	_files_to_load = file_paths.duplicate()#get_all_file_paths().duplicate()
 	start_progress(len(_files_to_load))
 	set_process(true)
+
+func override_fonts(node:Node):
+	if node is RichTextLabel:
+		var r:RichTextLabel = node
+		r.add_font_override("normal_font", FONT_R)
+		r.add_font_override("bold_font", FONT_B)
+		r.add_font_override("italics_font", FONT_I)
+		r.add_font_override("bold_italics_font", FONT_BI)
+
+func get_symbol_color(deep:int=0, off:float=0.0) -> Color:
+	var t = clamp(deep / 6.0, 0.0, 1.0)
+	var s = pow(lerp(1.0, 0.33, t), 6.0)
+	var v = lerp(1.0, 0.33, t)
+	var c = color_symbol
+	return c.from_hsv(wrapf(c.h + off, 0.0, 1.0), c.s * s, c.v * v, c.a)
 
 func start_progress(maxx:int):
 	progress_bar.visible = true
@@ -537,11 +568,33 @@ func _apply_fonts(n:Node):
 		if n.has_font("font"):
 			n.add_font_override("font", FONT_R)
 
+func insert_date():
+	var d = OS.get_date()
+	var m = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"][d.month-1]
+	insert("%s %s, %s" % [m, d.day, d.year])
+
+func insert(text:String):
+	var t:TextEdit = get_selected_tab()
+	if t:
+		var l = t.cursor_get_line()
+		var c = t.cursor_get_column()
+		t.insert_text_at_cursor(text)
+		t.select(l, c, l, c+len(text))
+		yield(get_tree(), "idle_frame")
+		t.grab_focus()
+		t.grab_click_focus()
+
 func _menu_file(index:int):
 	var text = popup_file.get_item_text(index)
 	match text:
 		"New File": popup_create_file() # "New File"
 		"Open last closed": open_last_file() # "Open last closed"
+
+func _menu_insert(index:int):
+	var text = popup_insert.get_item_text(index)
+	match text:
+		"Date": insert_date()
+		"Words Typed": insert("WORDS TYPED")
 
 func _menu_view_dir(index:int):
 	var text = popup_view_dir.get_item_text(index)
@@ -675,6 +728,7 @@ func create_file(file_path:String, text:String=""):
 	if f.open(file_path, File.WRITE) == OK:
 		f.store_string(text)
 		f.close()
+		update_file_data(file_path)
 		refresh_files()
 		
 		if file_dialog.has_meta("callback"):
@@ -1025,15 +1079,15 @@ func _can_show_file(fname:String) -> bool:
 func get_dir_info(path:String) -> Dictionary:
 	return TE_Util.dig_for(file_list, "file_path", path)
 
-var all_file_paths:Array = []
-func get_all_file_paths():
-	all_file_paths.clear()
-	TE_Util.dig(file_list, self, "_get_all_file_paths")
-	return all_file_paths
-	
-func _get_all_file_paths(d:Dictionary):
-	if "files" in d:
-		all_file_paths.append_array(d.files)
+#var all_file_paths:Array = []
+#func get_all_file_paths():
+#	all_file_paths.clear()
+#	TE_Util.dig(file_list, self, "_get_all_file_paths")
+#	return all_file_paths
+#
+#func _get_all_file_paths(d:Dictionary):
+#	if "files" in d:
+#		all_file_paths.append_array(d.files)
 
 func get_file_tint_name(fpath:String) -> String:
 	var bdir = fpath.get_base_dir()

@@ -31,13 +31,13 @@ class Sorter:
 static func sort_keys(d:Dictionary, reverse:bool=false): return Sorter.new(d).on_keys(reverse)
 static func sort_vals(d:Dictionary, reverse:bool=false): return Sorter.new(d).on_vals(reverse)
 
-static func count_words(text:String, counter:Dictionary, skip_words=null):
+static func count_words(text:String, counter:Dictionary, skip_words=null, stop_words:bool=true):
 	var word_count:int = 0
 	for sentence in text.split("."):
 		for word in sentence.split(" "):
 			word = _sanitize_word(word)
 			if not word: continue
-			if word in TE_StopWords.STOP_WORDS: continue
+			if stop_words and word in TE_StopWords.STOP_WORDS: continue
 			if skip_words and word in skip_words: continue
 			
 			word_count += 1
@@ -68,6 +68,9 @@ static func _sanitize_word(word:String):
 		return out.substr(0, len(out)-2)
 	
 	return out
+
+static func to_var(s:String) -> String:
+	return s.to_lower().replace(" ", "_")
 
 static func load_text(path:String) -> String:
 	var f:File = File.new()
@@ -196,6 +199,9 @@ static func file_size(path:String) -> String:
 
 static func hue_shift(c:Color, h:float) -> Color:
 	return c.from_hsv(wrapf(c.h + h, 0.0, 1.0), c.s, c.v, c.a)
+
+#static func saturate(c:Color, s:float=1.0, v:float=1.0) -> Color:
+#	return c.from_hsv(c.h, c.s * s, c.v * v, c.a)
 
 #static func sort(d, reverse:bool=false):
 #	return Dict.new(d).sort(reverse)

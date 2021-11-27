@@ -319,7 +319,7 @@ func _draw_dir(dir:Dictionary, deep:int):
 						var sname = sdata.name
 						if filter and not filter in sname.to_lower():
 							continue
-						var s = "  ".repeat(sdata.deep) + clr("  %s) " % [j], dull) + clr(sname, dull_tint)
+						var s = clr("|%s %s) " % ["  ".repeat(sdata.deep), j], dull) + clr(sname, dull_tint)
 						var h = hint_path + " #" + sname
 						symbol_lines.append(meta(space + s, ["fs", file_path, j], h))
 			

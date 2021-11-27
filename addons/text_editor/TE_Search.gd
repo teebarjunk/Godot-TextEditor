@@ -17,20 +17,10 @@ func _ready():
 	all_toggle.add_font_override("font", editor.FONT_R)
 	case_toggle.add_font_override("font", editor.FONT_R)
 
-func _unhandled_key_input(e):
-	if not editor.is_plugin_active():
-		return
-	
-	# Ctrl + F to search
-	if e.scancode == KEY_F and e.pressed and e.control:
-		line_edit.grab_focus()
-		line_edit.grab_click_focus()
-		line_edit.select_all()
-		# show meta tab
-		get_parent().get_parent().show()
-		# make search tab current meta tab
-		get_parent().get_parent().current_tab = get_parent().get_index()
-		get_tree().set_input_as_handled()
+func select():
+	line_edit.grab_focus()
+	line_edit.grab_click_focus()
+	line_edit.select_all()
 
 func _clicked(args):
 	match args[0]:
@@ -39,12 +29,16 @@ func _clicked(args):
 			editor.select_file(args[1])
 			yield(get_tree(), "idle_frame")
 			# goto line
-			var line = int(args[2])
-			tab.goto_line(line)
+			var hfrom = int(args[2])
+			var line = int(args[3])
+			tab.goto_line(hfrom)
+			tab.goto_line(line, false)
 			# select area
-			var from = int(args[3])
-			var lenn = int(args[4])
+			var from = int(args[4])
+			var lenn = int(args[5])
 			tab.select(line, from, line, from + lenn)
+			tab.cursor_set_line(line)
+			tab.cursor_set_column(from)
 
 func _text_entered(search_for:String):
 	last_search = search_for
@@ -62,33 +56,37 @@ func _text_entered(search_for:String):
 		l = meta(l, ["goto", file_path, 0, 0, 0], file_path)
 		bbcode.append(l)
 		
-		for j in len(found[file_path]):
+		var all_found = found[file_path]
+		for j in len(all_found):
 			var result = found[file_path][j]
 			var got_lines = result[0]
-			var line_index = result[1]
-			var char_index = result[2]
+			var highlight_from = result[1]
+			var line_index = result[2]
+			var char_index = result[3]
 			
-			if j != 0:
-				bbcode.append("\t" + clr("...", Color.gray))
+			bbcode.append(clr("  %s/%s" % [j+1, len(all_found)], Color.orange))
 			
 			for i in len(got_lines):
 				l = ""
+				var highlight = got_lines[i][0]
+				var lindex = got_lines[i][1]
+				var ltext = got_lines[i][2]
 				
-				if i == 2:
-					var line:String = got_lines[i]
+				if highlight:
+					var line:String = ltext
 					var head:String = line.substr(0, char_index)
 					var midd:String = line.substr(char_index, len(search_for))
 					var tail:String = line.substr(char_index+len(search_for))
-					head = clr(head, Color.deepskyblue.lightened(.5))
-					midd = clr(midd, Color.deepskyblue.darkened(.25))
-					tail = clr(tail, Color.deepskyblue.lightened(.5))
-					l = "\t" + clr(str(line_index-2+i+1) + ": ", Color.deepskyblue.lightened(.5)) + (head+midd+tail)
+					head = clr(head, Color.white.darkened(.25))
+					midd = b(clr(midd, Color.white))
+					tail = clr(tail, Color.white.darkened(.25))
+					l = "\t" + clr(str(lindex) + ": ", Color.white.darkened(.25)) + (head+midd+tail)
 				
-				elif line_index-2+i >= 0:
-					l = "\t" + clr(str(line_index-2+i+1) + ": ", Color.gray) + got_lines[i]
+				else:
+					l = "\t" + clr(str(lindex) + ": ", Color.white.darkened(.65)) + clr(ltext, Color.white.darkened(.5))
 				
 				if l:
-					l = meta(l, ["goto", file_path, line_index, char_index, len(search_for)])
+					l = meta(l, ["goto", file_path, highlight_from, line_index, char_index, len(search_for)])
 					bbcode.append(l)
 	
 	set_bbcode(bbcode.join("\n"))
@@ -120,7 +118,7 @@ func _search(search_for:String) -> Dictionary:
 		
 		else:
 			paths = [sel]
-		
+	
 	for path in paths:
 		var lines = TE_Util.load_text(path).split("\n")
 		for line_index in len(lines):
@@ -136,17 +134,25 @@ func _search(search_for:String) -> Dictionary:
 				if not path in out:
 					out[path] = []
 				
-				var preview_lines = PoolStringArray()
+				var preview_lines = [[true, line_index, lines[line_index]]]
 				var highlight_from:int = line_index
 				
-				# show surrounding 5 lines.
-				for i in range(-2, 3):
-					if line_index+i >= 0 and line_index+i < len(lines):
-						preview_lines.append(lines[line_index+i])
-					else:
-						preview_lines.append("")
+				# previous few lines before a blank
+				for i in range(1, 3):
+					if line_index-i >= 0:
+						if not lines[line_index-i].strip_edges():
+							break
+						highlight_from = line_index-i
+						preview_lines.push_front([false, line_index-i, lines[line_index-i]])
+				
+				# next few lines before a blank
+				for i in range(1, 3):
+					if line_index+i < len(lines):
+						if not lines[line_index+i].strip_edges():
+							break
+						preview_lines.push_back([false, line_index+i, lines[line_index+i]])
 				
 				# lines, index in file, index in line
-				out[path].append([preview_lines, line_index, char_index])
+				out[path].append([preview_lines, highlight_from, line_index, char_index])
 	
 	return out

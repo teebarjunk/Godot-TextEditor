@@ -126,13 +126,15 @@ func selection_lowercase():
 
 func selection_variable():
 	_remember_selection()
-	insert_text_at_cursor(get_selection_text().to_lower().replace(" ", "_"))
+	insert_text_at_cursor(TE_Util.to_var(get_selection_text()))
 	_remake_selection()
 
 func selection_capitalize():
 	_remember_selection()
 	insert_text_at_cursor(get_selection_text().capitalize())
 	_remake_selection()
+
+
 
 func _node(n):
 	var _e
@@ -188,20 +190,27 @@ func _update_selected_line():
 	var l = cursor_get_line()
 	editor.select_symbol_line(0)
 	
-	var depth = PoolStringArray()
+	for i in len(symbols):
+		var sindex = clamp(i, 0, len(symbols))
+		var symbol = symbols.values()[sindex]
+		if i == len(symbols)-1 or symbols.keys()[i+1] > l:
+			editor.select_symbol_line(sindex)
+			break
+
+func get_line_symbols(line:int) -> PoolStringArray:
+	var depth:PoolStringArray = PoolStringArray()
 	for i in len(symbols):
 		var sindex = clamp(i, 0, len(symbols))
 		var symbol = symbols.values()[sindex]
 		while len(depth) <= symbol.deep:
 			depth.append("")
 		
-		depth[symbol.deep] = "  ".repeat(symbol.deep) + symbol.name
+		depth[symbol.deep] = symbol.name
 		
-		if i == len(symbols)-1 or symbols.keys()[i+1] > l:
-			editor.select_symbol_line(sindex)
+		if i == len(symbols)-1 or symbols.keys()[i+1] > line:
 			depth.resize(symbol.deep+1)
-			hint_tooltip = "[%s]\n%s" % [editor.get_localized_path(file_path), depth.join("\n")]
 			break
+	return depth
 
 func _input(e):
 	if not editor.is_plugin_active():
@@ -272,10 +281,29 @@ func _input(e):
 			select(f+1, 0, t+1, len(get_line(t+1)))
 			cursor_set_line(cursor_get_line()+1, false)
 		
-		if e.scancode == KEY_U: selection_uppercase()
-		if e.scancode == KEY_L: selection_lowercase()
-		if e.scancode == KEY_O: selection_capitalize()
-		if e.scancode == KEY_P: selection_variable()
+		if e.scancode == KEY_U:
+			if get_selection_text() == get_selection_text().to_upper():
+				selection_lowercase()
+			else:
+				selection_uppercase()
+		
+		if e.scancode == KEY_L:
+			if get_selection_text() == get_selection_text().to_lower():
+				selection_uppercase()
+			else:
+				selection_lowercase()
+		
+		if e.scancode == KEY_O:
+			if get_selection_text() == get_selection_text().capitalize():
+				selection_variable()
+			else:
+				selection_capitalize()
+		
+		if e.scancode == KEY_P:
+			if get_selection_text() == TE_Util.to_var(get_selection_text()):
+				selection_capitalize()
+			else:
+				selection_variable()
 
 func _unhandled_key_input(e):
 	if not visible:
@@ -328,9 +356,10 @@ func goto_symbol(index:int):
 	if syms and index >= 0 and index < len(syms):
 		goto_line(syms[index])
 
-func goto_line(line:int):
+func goto_line(line:int, bottom:bool=true):
 	# force scroll to bottom so selected line will be at top
-	cursor_set_line(get_line_count())
+	if bottom:
+		cursor_set_line(get_line_count())
 	cursor_set_line(line)
 	_update_selected_line()
 
@@ -467,7 +496,6 @@ func update_name():
 		editor.tab_parent.set_tab_icon(get_index(), null)
 	
 	editor.tab_parent.set_tab_title(get_index(), n)
-	editor.tab_parent.get_tab_control(get_index()).hint_tooltip = file_path
 
 func update_heading():
 	if Engine.editor_hint:

@@ -1,3 +1,15 @@
+# 1.10
+- Added cursor panel at bottom of Text Editor. 
+	- Word counter.
+	- Symbol path.
+- Added `insert` menu, for inserting Date.
+- `ctrl + shift + u` and `ctrl + shift + l` will toggle uppercase and lowercase.
+- `ctrl + shift + o` and `ctrl + shift + p` will toggle capitalize and variablize.
+- Fixed `ctrl + f` not bringing up search pannel.
+- Fixed error when creating new file.
+- Removed Text Editor hints.
+- Color tweaks.
+
 # 1.9
 - Tag Viewer now shows all tags regardless of whether the file is open or not.
 - File View can show symbols. Toggle with `ctrl` click.

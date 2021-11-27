@@ -1,4 +1,4 @@
-[gd_scene load_steps=26 format=2]
+[gd_scene load_steps=29 format=2]
 
 [ext_resource path="res://addons/text_editor/TE_Console.gd" type="Script" id=1]
 [ext_resource path="res://addons/text_editor/TE_Editor.gd" type="Script" id=2]
@@ -17,6 +17,9 @@
 [ext_resource path="res://addons/text_editor/TE_Search.gd" type="Script" id=15]
 [ext_resource path="res://addons/text_editor/TE_MetaTabs.gd" type="Script" id=16]
 [ext_resource path="res://addons/text_editor/TE_ScriptInfo.gd" type="Script" id=17]
+[ext_resource path="res://addons/text_editor/TE_FileInfoLabel.gd" type="Script" id=18]
+[ext_resource path="res://addons/text_editor/TE_RichTextLabel.gd" type="Script" id=19]
+[ext_resource path="res://addons/text_editor/te_empty_style.tres" type="StyleBox" id=20]
 
 [sub_resource type="Theme" id=8]
 
@@ -50,8 +53,13 @@ script = ExtResource( 2 )
 __meta__ = {
 "_edit_use_anchors_": false
 }
+p_tab_parent = NodePath("c/div1/div2/c/c/c2/tab_container")
+p_tab_prefab = NodePath("file_editor")
 p_console = NodePath("c/div1/div2/c/c/c/meta_tabs/console")
 p_progress_bar = NodePath("c/c/c/progress")
+p_menu_file = NodePath("c/c/c/file")
+p_menu_view = NodePath("c/c/c/view")
+p_menu_insert = NodePath("c/c/c/insert")
 
 [node name="file_editor" type="TextEdit" parent="."]
 visible = false
@@ -97,7 +105,7 @@ margin_right = 12.0
 margin_bottom = 24.0
 text = "⟳"
 
-[node name="file_button" type="MenuButton" parent="c/c/c"]
+[node name="file" type="MenuButton" parent="c/c/c"]
 margin_left = 16.0
 margin_right = 48.0
 margin_bottom = 24.0
@@ -107,7 +115,7 @@ __meta__ = {
 "_edit_use_anchors_": false
 }
 
-[node name="view_button" type="MenuButton" parent="c/c/c"]
+[node name="view" type="MenuButton" parent="c/c/c"]
 margin_left = 52.0
 margin_right = 93.0
 margin_bottom = 24.0
@@ -118,21 +126,32 @@ __meta__ = {
 "_edit_use_anchors_": false
 }
 
-[node name="word_wrap" type="CheckBox" parent="c/c/c"]
+[node name="insert" type="MenuButton" parent="c/c/c"]
 margin_left = 97.0
-margin_right = 155.0
+margin_right = 146.0
+margin_bottom = 24.0
+focus_mode = 2
+text = "insert"
+items = [ "New File", null, 0, false, false, 0, 0, null, "", false, "Extensions", null, 0, false, false, 1, 0, null, "Extensions", false, "New File", null, 0, false, false, 2, 0, null, "", false, "Extensions", null, 0, false, false, 3, 0, null, "Extensions", false ]
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="word_wrap" type="CheckBox" parent="c/c/c"]
+margin_left = 150.0
+margin_right = 208.0
 margin_bottom = 24.0
 text = "wrap"
 
 [node name="tab_colors" type="CheckBox" parent="c/c/c"]
-margin_left = 159.0
-margin_right = 250.0
+margin_left = 212.0
+margin_right = 303.0
 margin_bottom = 24.0
 text = "tab colors"
 
 [node name="space" type="Control" parent="c/c/c"]
-margin_left = 254.0
-margin_right = 978.0
+margin_left = 307.0
+margin_right = 971.0
 margin_bottom = 24.0
 size_flags_horizontal = 3
 size_flags_vertical = 3
@@ -147,12 +166,12 @@ size_flags_vertical = 3
 
 [node name="version" type="Label" parent="c/c/c"]
 modulate = Color( 1, 1, 1, 0.521569 )
-margin_left = 982.0
+margin_left = 975.0
 margin_top = 3.0
 margin_right = 1010.0
 margin_bottom = 20.0
 custom_fonts/font = ExtResource( 12 )
-text = "v1.9"
+text = "v1.10"
 align = 2
 
 [node name="div1" type="HSplitContainer" parent="c"]
@@ -192,6 +211,7 @@ margin_right = 192.0
 margin_bottom = 27.0
 custom_fonts/font = ExtResource( 12 )
 clear_button_enabled = true
+placeholder_text = "Filter"
 
 [node name="list_files" type="RichTextLabel" parent="c/div1/c2/c/c"]
 margin_top = 31.0
@@ -253,10 +273,17 @@ margin_right = 614.0
 margin_bottom = 562.0
 size_flags_horizontal = 3
 size_flags_vertical = 3
+split_offset = 100
 
-[node name="tab_container" type="TabContainer" parent="c/div1/div2/c/c"]
+[node name="c2" type="VBoxContainer" parent="c/div1/div2/c/c"]
 margin_right = 614.0
-margin_bottom = 275.0
+margin_bottom = 375.0
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="tab_container" type="TabContainer" parent="c/div1/div2/c/c/c2"]
+margin_right = 614.0
+margin_bottom = 353.0
 size_flags_horizontal = 3
 size_flags_vertical = 3
 custom_constants/top_margin = 0
@@ -269,8 +296,62 @@ __meta__ = {
 "_edit_use_anchors_": false
 }
 
+[node name="c" type="HBoxContainer" parent="c/div1/div2/c/c/c2"]
+margin_top = 357.0
+margin_right = 614.0
+margin_bottom = 375.0
+size_flags_horizontal = 3
+script = ExtResource( 18 )
+
+[node name="l" type="RichTextLabel" parent="c/div1/div2/c/c/c2/c"]
+margin_right = 202.0
+margin_bottom = 18.0
+size_flags_horizontal = 3
+size_flags_vertical = 3
+custom_fonts/bold_italics_font = ExtResource( 13 )
+custom_fonts/italics_font = ExtResource( 10 )
+custom_fonts/bold_font = ExtResource( 11 )
+custom_fonts/normal_font = ExtResource( 12 )
+custom_styles/focus = ExtResource( 20 )
+custom_styles/normal = ExtResource( 20 )
+bbcode_enabled = true
+fit_content_height = true
+script = ExtResource( 19 )
+
+[node name="m" type="RichTextLabel" parent="c/div1/div2/c/c/c2/c"]
+margin_left = 206.0
+margin_right = 408.0
+margin_bottom = 18.0
+size_flags_horizontal = 3
+size_flags_vertical = 3
+custom_fonts/bold_italics_font = ExtResource( 13 )
+custom_fonts/italics_font = ExtResource( 10 )
+custom_fonts/bold_font = ExtResource( 11 )
+custom_fonts/normal_font = ExtResource( 12 )
+custom_styles/focus = ExtResource( 20 )
+custom_styles/normal = ExtResource( 20 )
+bbcode_enabled = true
+fit_content_height = true
+script = ExtResource( 19 )
+
+[node name="r" type="RichTextLabel" parent="c/div1/div2/c/c/c2/c"]
+margin_left = 412.0
+margin_right = 614.0
+margin_bottom = 18.0
+size_flags_horizontal = 3
+size_flags_vertical = 3
+custom_fonts/bold_italics_font = ExtResource( 13 )
+custom_fonts/italics_font = ExtResource( 10 )
+custom_fonts/bold_font = ExtResource( 11 )
+custom_fonts/normal_font = ExtResource( 12 )
+custom_styles/focus = ExtResource( 20 )
+custom_styles/normal = ExtResource( 20 )
+bbcode_enabled = true
+fit_content_height = true
+script = ExtResource( 19 )
+
 [node name="c" type="Control" parent="c/div1/div2/c/c"]
-margin_top = 287.0
+margin_top = 387.0
 margin_right = 614.0
 margin_bottom = 562.0
 size_flags_horizontal = 3
@@ -287,7 +368,6 @@ __meta__ = {
 }
 
 [node name="console" type="RichTextLabel" parent="c/div1/div2/c/c/c/meta_tabs"]
-visible = false
 anchor_right = 1.0
 anchor_bottom = 1.0
 margin_left = 4.0
@@ -304,11 +384,6 @@ custom_fonts/normal_font = ExtResource( 12 )
 bbcode_enabled = true
 meta_underlined = false
 text = "active: False
-active: False
-active: False
-active: False
-active: False
-active: False
 "
 script = ExtResource( 1 )
 
@@ -357,7 +432,6 @@ margin_left = 413.0
 margin_right = 504.0
 margin_bottom = 27.0
 custom_fonts/font = ExtResource( 12 )
-pressed = true
 text = "all files"
 
 [node name="case" type="CheckBox" parent="c/div1/div2/c/c/c/meta_tabs/search/c"]
@@ -370,7 +444,7 @@ text = "match case"
 [node name="rte" type="RichTextLabel" parent="c/div1/div2/c/c/c/meta_tabs/search"]
 margin_top = 31.0
 margin_right = 606.0
-margin_bottom = 231.0
+margin_bottom = 139.0
 size_flags_horizontal = 3
 size_flags_vertical = 3
 theme = SubResource( 12 )
@@ -401,7 +475,7 @@ text = "⟳"
 [node name="sys" type="RichTextLabel" parent="c/div1/div2/c/c/c/meta_tabs/sys"]
 margin_top = 27.0
 margin_right = 606.0
-margin_bottom = 227.0
+margin_bottom = 239.0
 size_flags_horizontal = 3
 size_flags_vertical = 3
 theme = SubResource( 13 )
@@ -416,6 +490,7 @@ text = "idwords ⯆unique"
 script = ExtResource( 17 )
 
 [node name="image" type="VBoxContainer" parent="c/div1/div2/c/c/c/meta_tabs"]
+visible = false
 anchor_right = 1.0
 anchor_bottom = 1.0
 margin_left = 4.0
@@ -466,6 +541,7 @@ margin_right = 166.0
 margin_bottom = 27.0
 custom_fonts/font = ExtResource( 12 )
 clear_button_enabled = true
+placeholder_text = "Filter"
 
 [node name="list_symbols" type="RichTextLabel" parent="c/div1/div2/c2/c/c/c"]
 margin_top = 31.0

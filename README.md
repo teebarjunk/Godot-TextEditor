@@ -1,5 +1,5 @@
 # Text Editor
-Version `1.9`
+Version `1.10`
 
 ![](README/readme_preview.png)
 
@@ -9,7 +9,7 @@ Version `1.9`
 - Multi file tab system.
 - File browser filtering.
 - Highlighting for common formats (`md` `json` `ini`...)
-- Tag system.
+- Tag [System](#mini-features-tags).
 - File Management:
 	- Creation.
 	- Renaming.
@@ -18,13 +18,7 @@ Version `1.9`
 - Search files.
 - Image previews.
 - Auto save/load settings.
-- Many little *Ease of Life* functions:
-	- Comment toggling for:
-		- `.md`: `<!-- -->`
-		- `.json`: `/* */`
-		- `.ini`: `; `
-		- `.cfg`: `; `
-		- `.yaml`: `# `
+- Many little *Ease of Life* [features](#mini-features).
 
 # Controls
 - `ctrl + N` New file.
@@ -89,5 +83,68 @@ This will then highlight *Files* and *Symbols* that have that tag.
 - [ ] Color themes.
 
 # Mini features
-- Clicking in file will scroll symbol view to the nearest symbol, and display it's name in the tool tip hint.
-- `ctrl` click in File View to toggle it's symbol list.
+
+## File List
+### Colorize Folder
+You can colorize files in a folder for easier identification. Right click a folder and select a color.
+The `tab colors` toggle at the top will toggle tabs colorized by folder.
+
+### Content Preview
+You can preview the contents of a file by `ctrl + click`ing it.
+
+The list is clickable, so you can go straight to a section of the file.
+
+When using the filter, contents will be scanned.
+
+## Content List (Symbols)
+### Selecting Sections
+`ctrl + click`ing on a symbol will select all lines contained in it, and it's childrens.
+
+`ctrl + shift + click` a symbol will only select it's lines, not it's childrens.
+
+## File Editor
+### Follow Link
+You can follow Markdown links by `ctrl + click`ing on them.
+
+## Tags
+The tag list displays all tags throughout the files.
+
+To add a tag to a file, include a comment, with a hashtag:
+- `.md`: `<!-- #tag1 #tag2 -->`
+- `.json`: `{ "#": "#tag1 #tag2 }`
+- `.ini` `.cfg`: `; #tag1 #tag2`
+- `.yaml`: `# #tag1 #tag2`
+
+`click` a tag to select it.
+
+All files in the File List and symbols in the Symbol List containing the tag, will be highlighted.
+
+`ctrl + click` to select multiple tags at once.
+
+## Meta Panel
+Toggle the meta panel with `ctrl + M`.
+
+### Meta
+The meta tab updates whenever you make a save.
+
+It lists some information on the contents of your file.
+
+Currently it mostly only works for Markdown.
+
+### Search
+todo
+
+### System
+Hitting refrsh will list all files in a table with sortable columns.
+
+Select a column to sort on:
+- Chapter count.
+- Word count.
+- Unique words.
+- Progress.
+- Time since modified.
+
+### Image
+In Markdown files (`.md`) you can `ctrl + click` an image to preview it.
+
+Images look like: `![](image_url.png)` in Markdown.

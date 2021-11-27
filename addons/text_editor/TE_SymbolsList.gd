@@ -120,18 +120,17 @@ func _redraw():
 			if filter and not filter in symbol_info.name.to_lower():
 				continue
 			
-			if deep == 0:
-				cl = editor.color_symbol
-				if symbol_info.name.begins_with("*") and symbol_info.name.ends_with("*"):
-					cl = TE_Util.hue_shift(cl, -.33)
-				elif symbol_info.name.begins_with('"') and symbol_info.name.ends_with('"'):
-					cl = TE_Util.hue_shift(cl, .33)
+			if symbol_info.name.begins_with("*") and symbol_info.name.ends_with("*"):
+				cl = editor.get_symbol_color(deep, -.33)
+			
+			elif symbol_info.name.begins_with('"') and symbol_info.name.ends_with('"'):
+				cl = editor.get_symbol_color(deep, .33)
+			
+			else:
+				cl = editor.get_symbol_color(deep)
 			
 			if not editor.is_tagged_or_visible(symbol_info.tags):
 				cl = cl.darkened(.7)
-			
-			elif deep >= 1:
-				cl = cl.darkened(.33 * (deep-1))
 			
 			var tags = "" if not symbol_info.tags else PoolStringArray(symbol_info.tags).join(", ")
 			var text = clr(meta(space + symbol_info.name, [symbol_info, line_index], tags), cl)
