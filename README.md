@@ -1,5 +1,5 @@
 # Text Editor
-Version `1.10`
+Version `1.11`
 
 ![](README/readme_preview.png)
 

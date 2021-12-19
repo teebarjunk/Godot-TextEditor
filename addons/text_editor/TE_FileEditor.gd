@@ -39,14 +39,15 @@ func _ready():
 	_e = editor.connect("file_renamed", self, "_file_renamed")
 	_e = editor.connect("dir_tint_changed", self, "_dir_tint_changed")
 	_e = connect("text_changed", self, "text_changed")
-	_e = connect("focus_entered", self, "set", ["in_focus", true])
-	_e = connect("focus_exited", self, "set", ["in_focus", false])
+	_e = connect("focus_entered", self, "_focus_entered")
+	_e = connect("focus_exited", self, "_focus_exited")
 	_e = connect("mouse_entered", self, "set", ["mouse_inside", true])
 	_e = connect("mouse_exited", self, "set", ["mouse_inside", false])
+#	_e = connect("cursor_changed", self, "_cursor_changed")
 	
-	if get_parent() is TabContainer:
-		get_parent().connect("tab_changed", self, "_tab_changed")
-		get_parent().connect("tab_selected", self, "_tab_changed")
+#	if get_parent() is TabContainer:
+#		get_parent().connect("tab_changed", self, "_tab_changed")
+#		get_parent().connect("tab_selected", self, "_tab_changed")
 	
 	add_font_override("font", editor.FONT)
 	var popup = get_menu()
@@ -79,6 +80,37 @@ func _ready():
 	
 	TE_Util.dig(self, self, "_node")
 
+func set_visible(v):
+	prints(file_path, v)
+	.set_visible(v)
+
+func _focus_entered():
+	if not in_focus:
+		in_focus = true
+
+func _focus_exited():
+	if in_focus:
+		in_focus = false
+
+func set_cursor_state(s:Array):
+	cursor_set_line(s[0], s[1])
+	if len(s) > 2:
+		select(s[2], s[3], s[4], s[5])
+
+func get_cursor_state() -> Array:
+	if is_selection_active():
+		return [
+			cursor_get_line(),
+			cursor_get_column(),
+			get_selection_from_line(),
+			get_selection_from_column(),
+			get_selection_to_line(),
+			get_selection_to_column()]
+	else:
+		return [
+			cursor_get_line(),
+			cursor_get_column()]
+
 func _dir_tint_changed(dir:String):
 	if file_path.get_base_dir() == dir:
 		update_name()
@@ -90,51 +122,25 @@ func _popup_menu(index:int):
 		"Capitalize": selection_capitalize()
 		"Variable": selection_variable()
 
-var cl
-var cc
-var isa
-var sl1
-var sc1
-var sl2
-var sc2
-
-func _remember_selection():
-	cl = cursor_get_line()
-	cc = cursor_get_column()
-	isa = is_selection_active()
-	if isa:
-		sl1 = get_selection_from_line()
-		sc1 = get_selection_from_column()
-		sl2 = get_selection_to_line()
-		sc2 = get_selection_to_column()
-
-func _remake_selection():
-	cursor_set_line(cl)
-	cursor_set_column(cc)
-	if isa:
-		select(sl1, sc1, sl2, sc2)
-
 func selection_uppercase():
-	_remember_selection()
+	var s = get_cursor_state()
 	insert_text_at_cursor(get_selection_text().to_upper())
-	_remake_selection()
+	set_cursor_state(s)
 
 func selection_lowercase():
-	_remember_selection()
+	var s = get_cursor_state()
 	insert_text_at_cursor(get_selection_text().to_lower())
-	_remake_selection()
+	set_cursor_state(s)
 
 func selection_variable():
-	_remember_selection()
+	var s = get_cursor_state()
 	insert_text_at_cursor(TE_Util.to_var(get_selection_text()))
-	_remake_selection()
+	set_cursor_state(s)
 
 func selection_capitalize():
-	_remember_selection()
+	var s = get_cursor_state()
 	insert_text_at_cursor(get_selection_text().capitalize())
-	_remake_selection()
-
-
+	set_cursor_state(s)
 
 func _node(n):
 	var _e
@@ -151,17 +157,12 @@ func _scroll_h(h:HScrollBar):
 func _scroll_v(v:VScrollBar):
 	vscroll = v.value
 
-func _tab_changed(index:int):
-	var myindex = get_index()
-	if index == myindex and visible:
-#		grab_focus()
-#		grab_click_focus()
-		yield(get_tree(), "idle_frame")
-		set_h_scroll(hscroll)
-		set_v_scroll(vscroll)
-
 func get_state() -> Dictionary:
-	var state = { hscroll=scroll_horizontal, vscroll=scroll_vertical }
+	var state = {
+		hscroll=scroll_horizontal,
+		vscroll=scroll_vertical,
+		cursor=get_cursor_state()
+	}
 	# unsaved
 	if file_path == "":
 		state.text = text
@@ -169,22 +170,21 @@ func get_state() -> Dictionary:
 	
 func set_state(state:Dictionary):
 	yield(get_tree(), "idle_frame")
-	hscroll = state.hscroll
-	vscroll = state.vscroll
-	set_h_scroll(state.hscroll)
-	set_v_scroll(state.vscroll)
+	
+	if "hscroll" in state:
+		hscroll = state.hscroll
+		vscroll = state.vscroll
+		set_h_scroll(state.hscroll)
+		set_v_scroll(state.vscroll)
 	
 	if "text" in state:
 		if state.text.strip_edges():
 			text = state.text
 		else:
 			editor._close_file(file_path)
-
-func _file_renamed(old_path:String, new_path:String):
-	if old_path == file_path:
-		file_path = new_path
-		update_name()
-		update_colors()
+	
+	if "cursor" in state:
+		set_cursor_state(state.cursor)
 
 func _update_selected_line():
 	var l = cursor_get_line()
@@ -215,6 +215,11 @@ func get_line_symbols(line:int) -> PoolStringArray:
 func _input(e):
 	if not editor.is_plugin_active():
 		return
+	
+	# custom tab system
+	if visible and in_focus and e is InputEventKey and e.pressed and e.scancode == KEY_TAB:
+		insert_text_at_cursor(helper.get_tab())
+		get_tree().set_input_as_handled()
 	
 	if not visible or not in_focus or not mouse_inside:
 		return
@@ -314,42 +319,23 @@ func _unhandled_key_input(e):
 		helper.toggle_comment(self)
 		get_tree().set_input_as_handled()
 
+func _file_renamed(old_path:String, new_path:String):
+	if old_path == file_path:
+		file_path = new_path
+		update_name()
+		update_colors()
+
 func _file_selected(p:String):
-	if not p:
+	if p != file_path:
 		return
 	
-	if p == file_path:
-		update_symbols()
-		update_heading()
-		
-		var cl = cursor_get_line()
-		var cc = cursor_get_column()
-		var fl
-		var fc
-		var tl
-		var tc
-		var had_selection = false
-		
-		if is_selection_active():
-			had_selection = true
-			fl = get_selection_from_line()
-			fc = get_selection_from_column()
-			tl = get_selection_to_line()
-			tc = get_selection_to_column()
-			
-			grab_focus()
-			grab_click_focus()
-		
-		yield(get_tree(), "idle_frame")
-		
-		cursor_set_line(cl)
-		cursor_set_column(cc)
-		
-		if had_selection:
-			select(fl, fc, tl, tc)
-		
-		grab_focus()
-		grab_click_focus()
+	update_symbols()
+	update_heading()
+	
+#	yield(get_tree(), "idle_frame")
+#
+#	grab_focus()
+#	grab_click_focus()
 
 func goto_symbol(index:int):
 	var syms = symbols.keys()
@@ -393,6 +379,8 @@ func set_temporary(t):
 	update_name()
 
 func update_symbols():
+	update_helper()
+	
 	symbols.clear()
 	tags.clear()
 	
@@ -438,11 +426,14 @@ func load_file(path:String):
 	clear_undo_history()
 	update_colors()
 	update_name()
-	
-func update_colors():
-	clear_colors()
+
+func update_helper():
 	helper = editor.get_extension_helper(file_path)
 	helper.apply_colors(editor, self)
+
+func update_colors():
+	clear_colors()
+	update_helper()
 
 func _created_nonexisting(fp:String):
 	file_path = fp

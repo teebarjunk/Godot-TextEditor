@@ -200,6 +200,18 @@ static func file_size(path:String) -> String:
 static func hue_shift(c:Color, h:float) -> Color:
 	return c.from_hsv(wrapf(c.h + h, 0.0, 1.0), c.s, c.v, c.a)
 
+static func highlight(line:String, start:int, length:int, default_color:Color, highlight_color:Color) -> String:
+	var head:String = line.substr(0, start)
+	var midd:String = line.substr(start, length)
+	var tail:String = line.substr(start + length)
+	head = clr(head, default_color)
+	midd = b(clr(midd, highlight_color))
+	tail = clr(tail, default_color)
+	return head + midd + tail
+
+static func b(t:String) -> String: return "[b]%s[/b]" % t
+static func clr(t:String, c:Color) -> String: return "[color=#%s]%s[/color]" % [c.to_html(), t]
+
 #static func saturate(c:Color, s:float=1.0, v:float=1.0) -> Color:
 #	return c.from_hsv(c.h, c.s * s, c.v * v, c.a)
 

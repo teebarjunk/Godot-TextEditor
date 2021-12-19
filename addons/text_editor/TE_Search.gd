@@ -73,14 +73,17 @@ func _text_entered(search_for:String):
 				var ltext = got_lines[i][2]
 				
 				if highlight:
-					var line:String = ltext
-					var head:String = line.substr(0, char_index)
-					var midd:String = line.substr(char_index, len(search_for))
-					var tail:String = line.substr(char_index+len(search_for))
-					head = clr(head, Color.white.darkened(.25))
-					midd = b(clr(midd, Color.white))
-					tail = clr(tail, Color.white.darkened(.25))
-					l = "\t" + clr(str(lindex) + ": ", Color.white.darkened(.25)) + (head+midd+tail)
+#					var line:String = ltext
+#					var head:String = line.substr(0, char_index)
+#					var midd:String = line.substr(char_index, len(search_for))
+#					var tail:String = line.substr(char_index+len(search_for))
+#					head = clr(head, Color.white.darkened(.25))
+#					midd = b(clr(midd, Color.white))
+#					tail = clr(tail, Color.white.darkened(.25))
+					
+					var h = TE_Util.highlight(ltext, char_index, len(search_for), Color.white.darkened(.25), Color.white)
+					
+					l = "\t" + clr(str(lindex) + ": ", Color.white.darkened(.25)) + h
 				
 				else:
 					l = "\t" + clr(str(lindex) + ": ", Color.white.darkened(.65)) + clr(ltext, Color.white.darkened(.5))
@@ -90,6 +93,8 @@ func _text_entered(search_for:String):
 					bbcode.append(l)
 	
 	set_bbcode(bbcode.join("\n"))
+
+
 
 # get a list of files containging lines
 func _search(search_for:String) -> Dictionary:

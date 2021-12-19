@@ -1,3 +1,19 @@
+# 1.11
+- Toggled `Low Processor Mode` to keep cpu/gpu usage down.
+- Simplified *File List* filter display.
+- *File List* filter now scans closed folders as well.
+- Folder icon in *File List* changes when open/closed.
+- *File Editor* now saves states of:
+	- Cursor position.
+	- Selection.
+	- Scroll position.
+- Enabled hiding in *File Editor*. 
+- *Tag List* tags are sorted.
+- Added `.rpy` *Renpy* file support.
+- Added tab/spaces toggle.
+- Fixed files with `.` in their name not showing up.
+- Fixed error caused by clicking *File List* symbol for unopened file.
+
 # 1.10
 - Added cursor panel at bottom of Text Editor. 
 	- Word counter.

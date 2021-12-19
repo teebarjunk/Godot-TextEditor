@@ -219,7 +219,7 @@ var lines:PoolStringArray = PoolStringArray()
 
 func _redraw():
 	lines = PoolStringArray()
-	_draw_dir(editor.file_list[""], 0)
+	lines.append_array(_draw_dir(editor.file_list[""], 0))
 	set_bbcode(lines.join("\n"))
 
 func _dull_nonwords(s:String, clr:Color, dull:Color) -> String:
@@ -235,40 +235,50 @@ func _dull_nonwords(s:String, clr:Color, dull:Color) -> String:
 		out += clr(p[1], dull if p[0] else clr)
 	return out
 
-const FOLDER:String = "🗀" # not visible in godot
-func _draw_dir(dir:Dictionary, deep:int):
+const FOLDER_CLOSED:String = "🗀" # not visible in Godot.
+const FOLDER_OPEN:String = "🗁" # not visible in Godot.
+
+func _draw_dir(dir:Dictionary, deep:int) -> Array:
 	var is_tagging = editor.is_tagging()
 	var dimmest:float = .5 if is_tagging else 0.0
 	var tint = editor.get_tint_color(dir.tint)
 	var dull = Color.white.darkened(.65)
 	var dull_tint = tint.darkened(.5)
 	
-	var space = clr("┃ ".repeat(deep), Color.white.darkened(.8))
+	var space = ""
 	var file:String = dir.file_path
+	
+	space = clr("┃ ".repeat(deep), Color.white.darkened(.8))
+	
 	var head:String = "▼" if dir.open else "▶"
-	head = clr(space+FOLDER, Color.gold) + clr(head, Color.white.darkened(.5))
-	head += " " + b(_dull_nonwords(file.get_file(), tint.darkened(0 if editor.is_dir_tagged(dir) else 0.5), dull))
+	var fold:String = FOLDER_OPEN if dir.open else FOLDER_CLOSED
+	var dname = b(_dull_nonwords(file.get_file(), tint.darkened(0 if editor.is_dir_tagged(dir) else 0.5), dull))
+	dname = clr("｢", dull) + dname + clr("｣", dull)
+	head = clr(space+fold, Color.gold) + clr(head, Color.white.darkened(.5))
+	head += " %s" % dname
+	
 	var link:String = meta(head, ["d", dir], editor.get_localized_path(file))
 	if editor.is_trash_path(file):
 		link += " " + meta(clr("⬅", Color.yellowgreen), ["unrecycle", dir], file)
 	
-	lines.append(link)
+	var out = []
 	
 	var sel = editor.get_selected_tab()
 	sel = sel.file_path if sel else ""
 	
-	if dir.open:
+	if dir.open or filter:
 		# draw dirs
 		for path in dir.dirs:
 			var file_path = dir.all[path]
-			if file_path is Dictionary and file_path.show:
-				_draw_dir(file_path, deep+1)
+			if file_path is Dictionary and (file_path.show or filter):
+				out.append_array(_draw_dir(file_path, deep+1))
 		
 		# draw files
 		var last = len(dir.files)-1
 		for i in len(dir.files):
 			var file_path = dir.files[i]
-			file = file_path.get_file()
+			var fname = file_path.get_file()
+			file = fname
 			var p = [file, ""] if not "." in file else file.split(".", true, 1)
 			file = p[0]
 			var ext = p[1]
@@ -276,9 +286,9 @@ func _draw_dir(dir:Dictionary, deep:int):
 			var is_selected = file_path == sel
 			var is_opened = editor.is_opened(file_path)
 			var color = tint
-			head = "┣╸" if i != last else "┗╸"
+			head = "" if filter else "┣╸" if i != last else "┗╸"
 			
-			var fname_lower = file.to_lower()
+			var fname_lower = fname.to_lower()
 			
 			if "readme" in fname_lower:
 				head = "🛈"
@@ -308,21 +318,41 @@ func _draw_dir(dir:Dictionary, deep:int):
 				line = u(line)
 			
 			var hint_path = editor.get_localized_path(file_path)
-			var symbol_lines = []
+			
+			var file_lines = []
 			
 			if not editor._scanning:
-				var fdata = editor.file_data[file_path]
+				var fdata = editor.get_file_data(file_path)
 				var symbols = fdata.symbols.values()
 				for j in range(1, len(symbols)):
 					if fdata.open or filter:
-						var sdata = symbols[j]
-						var sname = sdata.name
-						if filter and not filter in sname.to_lower():
+						var sdata:Dictionary = symbols[j]
+						var sname:String = sdata.name
+						var index = sname.to_lower().find(filter)
+						
+						if filter and index == -1:
 							continue
-						var s = clr("|%s %s) " % ["  ".repeat(sdata.deep), j], dull) + clr(sname, dull_tint)
-						var h = hint_path + " #" + sname
-						symbol_lines.append(meta(space + s, ["fs", file_path, j], h))
+						
+						var sname_highlighted = TE_Util.highlight(sname, index, len(filter), TE_Util.hue_shift(dull_tint, -.075), Color.white)
+						
+						var s = clr("  @ " + "-".repeat(sdata.deep), dull) + sname_highlighted
+						var h = hint_path + " @" + sname
+						file_lines.append(meta(space + s, ["fs", file_path, j], h))
 			
-			if symbol_lines or not (filter and not filter in fname_lower):
-				lines.append(meta(space + head + line, ["f", file_path], hint_path))
-				lines.append_array(symbol_lines)
+			if filter:
+				var index = fname_lower.find(filter)
+				if index != -1:
+					line = TE_Util.highlight(fname, index, len(filter), dull_tint, Color.white)
+			
+			# show file name if not filtering, or if 
+			if not filter or file_lines:
+				file_lines.push_front(meta(space + head + line, ["f", file_path], hint_path))
+#				file_lines.push_front(space + head + line)
+			
+			out.append_array(file_lines)
+	
+	# show folder name if not filtering, or if filter catches a sub file or subsymbol
+	if not filter or out:
+		out.push_front(link)
+	
+	return out

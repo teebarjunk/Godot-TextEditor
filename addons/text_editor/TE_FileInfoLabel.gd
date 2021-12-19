@@ -29,11 +29,11 @@ func _tab_changed(index:int):
 	tab = new_tab
 	var _e
 	_e = tab.connect("cursor_changed", self, "_cursor_changed")
-	_e = tab.connect("text_changed", self, "_text_changed")
-
-func _text_changed():
-#	print("text changed")
-	pass
+#	_e = tab.connect("text_changed", self, "_text_changed")
+#
+#func _text_changed():
+##	print("text changed")
+#	pass
 
 func _input(event):
 	if event is InputEventKey and event.pressed and tab and is_instance_valid(tab) and tab.has_focus():

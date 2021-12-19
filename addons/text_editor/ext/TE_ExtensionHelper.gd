@@ -4,6 +4,9 @@ class_name TE_ExtensionHelper
 
 var symbols:Dictionary = {}
 
+func get_tab() -> String:
+	return "	"
+
 func generate_meta(t:TextEdit, r:RichTextLabel):
 	var chars = TE_Util.commas(len(t.text))
 	var words = TE_Util.commas(len(t.text.split(" ", false)))

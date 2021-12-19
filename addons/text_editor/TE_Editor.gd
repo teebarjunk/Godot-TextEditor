@@ -13,7 +13,7 @@ const DNAME_TRASH:String = ".trash"
 const FNAME_STATE:String = ".text_editor_state.json"
 
 const MAIN_EXTENSIONS:PoolStringArray = PoolStringArray([
-	"txt", "md", "json", "csv", "cfg", "ini", "yaml"
+	"txt", "md", "json", "csv", "cfg", "ini", "yaml", "rpy"
 ])
 const INTERNAL_EXTENSIONS:PoolStringArray = PoolStringArray([
 	"gd", "tres", "tscn", "import", "gdignore", "gitignore"
@@ -26,6 +26,7 @@ const FILE_FILTERS:PoolStringArray = PoolStringArray([
 	"*.cfg ; Config",
 	"*.ini ; Config",
 	"*.yaml ; YAML",
+	"*.rpy; Renpy Script"
 ])
 
 const DIR_COLORS:Dictionary = {
@@ -289,6 +290,11 @@ func _process(delta):
 		progress_bar.visible = false
 		set_process(false)
 
+func get_file_data(file_path:String) -> Dictionary:
+	if not file_path in file_data:
+		update_file_data(file_path)
+	return file_data.get(file_path, {})
+
 func update_file_data(file_path:String):
 	var helper = get_extension_helper(file_path)
 	var text = TE_Util.load_text(file_path)
@@ -300,6 +306,7 @@ func update_file_data(file_path:String):
 	data.tags = ftags
 	file_data[file_path] = data
 	
+	# collect tags
 	tags.clear()
 	for d in file_data.values():
 		for tag in d.tags:
@@ -307,7 +314,20 @@ func update_file_data(file_path:String):
 				tags[tag] = d.tags[tag]
 			else:
 				tags[tag] += d.tags[tag]
+	# sort tags
+	var unsorted:Array = []
+	for k in tags:
+		unsorted.append([k, tags[k]])
+	unsorted.sort_custom(self, "_sort_tags")
+	# repopulate
+	tags.clear()
+	for t in unsorted:
+		tags[t[0]] = t[1]
+	
 	emit_signal("tags_updated")
+
+func _sort_tags(a, b):
+	return a[1] > b[1]
 
 # "001_file" -> ["001_", "file"]
 func _split_header(fname:String):
@@ -386,6 +406,7 @@ func save_state():
 		"shortcuts": shortcuts,
 		
 		"file_list": file_list,
+		"file_data": file_data,
 		
 		"div1": $c/div1.split_offset,
 		"div2": $c/div1/div2.split_offset,
@@ -400,6 +421,7 @@ func save_state():
 	
 	TE_Util.save_json(current_directory.plus_file(FNAME_STATE), state)
 	emit_signal("state_saved")
+	print("state saved")
 
 func load_state():
 	var state:Dictionary = TE_Util.load_json(current_directory.plus_file(FNAME_STATE))
@@ -421,6 +443,7 @@ func load_state():
 			self[k] = state[k]
 	
 	_load_property(state, "file_list")
+	_load_property(state, "file_data")
 	
 	var selected_file:String
 	for file_path in state.tabs:
@@ -428,6 +451,7 @@ func load_state():
 		file_path = get_globalized_path(file_path)
 		var tab = _open_file(file_path)
 		tab.set_state(st)
+#		tab._load_file_data()
 		if file_path == state.selected:
 			selected_file = file_path
 	
@@ -643,7 +667,9 @@ func _menu_view_file(index:int):
 				exts_enabled[ext] = not exts_enabled[ext]
 				popup_view_file.set_item_checked(index, exts_enabled[ext])
 			else:
-				print("no %s in %s" % [ext, exts_enabled])
+				print("no %s in %s. adding..." % [ext, exts_enabled])
+				exts_enabled[ext] = true
+				popup_view_file.set_item_checked(index, exts_enabled[ext])
 	
 	refresh_files()
 	save_state()
@@ -1166,7 +1192,7 @@ func _sort_on_ext(a, b):
 static func get_extension(file_path:String) -> String:
 	var file = file_path.get_file()
 	if "." in file:
-		return file.split(".", true, 1)[1]
+		return file.rsplit(".", true, 1)[1]
 	return ""
 
 var complained_ext:Array = []
@@ -1174,7 +1200,7 @@ var complained_ext:Array = []
 func get_extension_helper(file_path:String) -> TE_ExtensionHelper:
 	var ext:String = get_extension(file_path).replace(".", "_")
 	var ext_path:String = "res://addons/text_editor/ext/ext_%s.gd" % ext
-	if ext in ["cfg", "csv", "ini", "json", "md", "yaml", "txt"]:
+	if ext in ["cfg", "csv", "ini", "json", "md", "yaml", "txt", "rpy"]:
 		return load(ext_path).new()
 	
 	# only complain once
