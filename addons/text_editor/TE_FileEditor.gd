@@ -218,7 +218,22 @@ func _input(e):
 	
 	# custom tab system
 	if visible and in_focus and e is InputEventKey and e.pressed and e.scancode == KEY_TAB:
-		insert_text_at_cursor(helper.get_tab())
+		if is_selection_active():
+			var a = get_selection_from_line()
+			var b = get_selection_to_line()
+			var lines = get_selection_text().split("\n")
+			if e.shift:
+				for i in len(lines):
+					lines[i] = lines[i].trim_prefix(helper.get_tab())
+			else:
+				for i in len(lines):
+					lines[i] = helper.get_tab() + lines[i]
+			insert_text_at_cursor(lines.join("\n"))
+			select(a, 0, b, len(get_line(b)))
+			
+		else:
+			insert_text_at_cursor(helper.get_tab())
+		
 		get_tree().set_input_as_handled()
 	
 	if not visible or not in_focus or not mouse_inside:
@@ -487,6 +502,7 @@ func update_name():
 		editor.tab_parent.set_tab_icon(get_index(), null)
 	
 	editor.tab_parent.set_tab_title(get_index(), n)
+	name = n
 
 func update_heading():
 	if Engine.editor_hint:

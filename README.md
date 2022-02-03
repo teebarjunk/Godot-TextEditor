@@ -1,5 +1,5 @@
 # Text Editor
-Version `1.11`
+Version `1.12`
 
 ![](README/readme_preview.png)
 
@@ -148,3 +148,6 @@ Select a column to sort on:
 In Markdown files (`.md`) you can `ctrl + click` an image to preview it.
 
 Images look like: `![](image_url.png)` in Markdown.
+
+# Icon credit
+<a href="https://www.flaticon.com/free-icons/files-and-folders" title="files and folders icons">Files and folders icons created by Uniconlabs - Flaticon</a>

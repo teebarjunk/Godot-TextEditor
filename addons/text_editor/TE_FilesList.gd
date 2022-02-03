@@ -262,7 +262,6 @@ func _draw_dir(dir:Dictionary, deep:int) -> Array:
 		link += " " + meta(clr("⬅", Color.yellowgreen), ["unrecycle", dir], file)
 	
 	var out = []
-	
 	var sel = editor.get_selected_tab()
 	sel = sel.file_path if sel else ""
 	

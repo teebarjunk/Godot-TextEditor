@@ -1,3 +1,12 @@
+# 1.12
+- Changed icon.
+- Added tabs popup menu:
+	- Options for closing many tabs.
+	- Options for selecting tabs.
+- Console is hidden on start.
+- Fixed `yaml` tabs not working.
+- Fixed `tab` + `shift + tab`ing when multiple lines are selected.
+
 # 1.11
 - Toggled `Low Processor Mode` to keep cpu/gpu usage down.
 - Simplified *File List* filter display.

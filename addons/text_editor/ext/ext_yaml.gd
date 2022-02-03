@@ -1,6 +1,9 @@
 tool
 extends TE_ExtensionHelper
 
+func get_tab() -> String:
+	return "  "
+
 func _is_commented(lines) -> bool:
 	for i in len(lines):
 		if not lines[i].strip_edges():

@@ -788,6 +788,9 @@ func get_selected_file() -> String:
 	var node = get_selected_tab()
 	return node.file_path if node else ""
 
+func get_tabs() -> Array:
+	return tab_parent.get_children()
+
 func get_tab(file_path:String) -> TextEdit:
 	for child in tab_parent.get_children():
 		if child is TextEdit and child.file_path == file_path:

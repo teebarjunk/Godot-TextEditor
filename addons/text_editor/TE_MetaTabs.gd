@@ -7,6 +7,7 @@ func _ready():
 	if not editor.is_plugin_active():
 		return
 	
+	set_visible(false)
 	add_font_override("font", editor.FONT_R)
 
 func _unhandled_key_input(e):
